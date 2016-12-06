@@ -14,6 +14,10 @@ class ParseQuery:
     def any(self, request, response):
         response.params = url_decode(request.query_string)
 
+class CORS:
+    def any(serlf, request, response):
+        response.headers.set('Access-Control-Allow-Origin', '*')
+
 class ListFiles:
     def GET(self, request, response):
         list_type = response.params.get('list')
@@ -46,7 +50,7 @@ class Static:
     def GET(self, request, response):
         if request.path == '/':
             if not response.user:
-                response.response = ''
+                response.data = ''
                 response.location = 'https://login2.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
                 response.status_code = 302
                 return True
@@ -68,7 +72,7 @@ class S3Handler:
             response.response = obj['Body']._raw_stream
             response.mimetype = obj['ContentType']
         else:
-            response.response = 'Not found'
+            response.data = 'Not found'
             response.status_code = 404
 
         return True
@@ -81,7 +85,7 @@ class S3Handler:
     
             mimetype = from_buffer(file.stream.read(1024), mime=True)
     
-            response.response = dumps(s3.put(path, file, response.user, mimetype))
+            response.data = dumps(s3.put(path, file, response.user, mimetype))
         
         else:
             response.status_code = 401
@@ -93,15 +97,16 @@ class S3Handler:
         path = request.path[1:]
     
         if s3.owner(path) == response.user:
-            response.response = dumps(s3.delete(path))
+            response.data = dumps(s3.delete(path))
         else:
-            response.response = 'Not allowed'
+            response.data = 'Not allowed'
             response.status_code = 401
 
         return True
 
 middlewarez = [
     ParseQuery(),
+    CORS(),
     ListFiles(),
     AuthToken(),
     Static('build'),
