@@ -9,37 +9,20 @@ from werkzeug.urls import url_decode, url_quote
 
 import s3
 
-class Middleware:
-    def invoke(self, request, response):
-        if 'any' in dir(self):
-            res = self.any(request, response)
-            if res: return True
 
-        method = request.method
-        if method == 'GET' and 'get' in dir(self):
-            return self.get(request, response)
-        elif method == 'POST' and 'post' in dir(self):
-            return self.post(request, response)
-        elif method == 'DELETE' and 'delete' in dir(self):
-            return self.delete(request, response)
-        else:
-            response.response = 'Method not allowed'
-            response.status_code = 405
-            return True
-
-class ParseQuery(Middleware):
+class ParseQuery:
     def any(self, request, response):
         response.params = url_decode(request.query_string)
 
-class ListFiles(Middleware):
-    def get(self, request, response):
+class ListFiles:
+    def GET(self, request, response):
         list_type = response.params.get('list')
         if list_type:
             response.response = dumps(s3.list(request.path[1:], list_type))
 
             return True
 
-class AuthToken(Middleware):
+class AuthToken:
     def __init__(self):
         self.api_key = getenv('LOGIN_API_KEY')
 
@@ -56,11 +39,11 @@ class AuthToken(Middleware):
         else:
             return False
 
-class Static(Middleware):
+class Static:
     def __init__(self, path='static'):
         self.path = path
 
-    def get(self, request, response):
+    def GET(self, request, response):
         if request.path == '/':
             if not response.user:
                 response.response = ''
@@ -77,8 +60,8 @@ class Static(Middleware):
             
             return True
 
-class S3Handler(Middleware):
-    def get(self, request, response):
+class S3Handler:
+    def GET(self, request, response):
         obj = s3.get(request.path[1:])
 
         if obj:
@@ -90,7 +73,7 @@ class S3Handler(Middleware):
 
         return True
     
-    def post(self, request, response):
+    def POST(self, request, response):
         if response.user:
             path = request.path[1:]
     
@@ -106,7 +89,7 @@ class S3Handler(Middleware):
         
         return True
     
-    def delete(self, request, response):
+    def DELETE(self, request, response):
         path = request.path[1:]
     
         if s3.owner(path) == response.user:
@@ -117,7 +100,7 @@ class S3Handler(Middleware):
 
         return True
 
-chain = [
+middlewarez = [
     ParseQuery(),
     ListFiles(),
     AuthToken(),
@@ -129,8 +112,12 @@ chain = [
 def werk(request):
     response = Response()
 
-    for part in chain:
-        if part.invoke(request, response): break
+    for middleware in middlewarez:
+        if 'any' in dir(middleware):
+            if middleware.any(request, response): break
+
+        if request.method in dir(middleware):
+            if middleware.__getattribute__(request.method)(request, response): break
 
     return response
 
