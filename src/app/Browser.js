@@ -6,6 +6,7 @@ import React, {Component} from 'react';
 import {deepOrange400, deepOrange500} from 'material-ui/styles/colors';
 
 import {List, ListItem} from 'material-ui/List';
+import RaisedButton from 'material-ui/RaisedButton';
 import Subheader from 'material-ui/Subheader';
 import Divider from 'material-ui/Divider';
 
@@ -14,84 +15,57 @@ import ActionDelete from 'material-ui/svg-icons/action/delete'
 
 const apiUrl = 'http://localhost:5000/'
 
-class Browser extends Component {
-  constructor(props, context) {
-    super(props, context)
-
-    this.state = {
-      path: '',
-      files: [],
-      folders: []
-    }
-
-    this.componentDidMount = this.componentDidMount.bind(this)
-    this.changePath = this.changePath.bind(this)
-    this.list = this.list.bind(this)
-  }
-
-  componentDidMount() {
-    this.changePath('')
-  }
-
-  changePath(path) {
-    this.list(path, 'files')
-    this.list(path, 'folders')
-    this.setState({path})
-  }
-
-  list(path, type) {
-    return fetch(apiUrl + path + '?list=' + type)
-      .then(res => res.json())
-      .then(res => {
-        this.setState({[type]: res})
-      })
-  }
-
-  render() {
-    const {path, files, folders} = this.state
-    return (<div>
-      <h1>path: { path } </h1>
-      <Divider />
-      <Subheader>Folders</Subheader>
-      <List>
-        {folders.map(folder => <FolderItem
-          key={folder}
-          name={folder}
-          changePath={this.changePath} />)}
-      </List>
-      <Divider />
-      <Subheader>Files</Subheader>
-      <List>
-        {files.map(file => <FileItem
-          key={file}
-          name={file} />)}
-      </List>
-    </div>)
-  }
+function Browser(props) {
+  const {folder, files, folders, token, list, changeFolder, onDelete} = props
+  return (<div>
+    {folder ? <RaisedButton 
+                primary={true}
+                onTouchTap={e => changeFolder('')}
+                label='Back to root' /> : false}
+    <Subheader>{folder}</Subheader>
+    <Subheader>Folders</Subheader>
+    <List>
+      {folders.map(folder => <FolderItem
+        key={folder}
+        name={folder}
+        changeFolder={changeFolder} />)}
+    </List>
+    <Divider />
+    <Subheader>Files</Subheader>
+    <List>
+      {files.map(file => <FileItem
+                            key={file}
+                            name={file}
+                            token={token}
+                            onDelete={onDelete}
+                          />)}
+    </List>
+  </div>)
 }
 
 function FolderItem(props) {
-  const {name, changePath} = props
+  const {name, changeFolder} = props
 
   return (
-    <ListItem 
+    <ListItem
       primaryText={name}
-      onClick={() => changePath(name)} />
+      onTouchTap={() => changeFolder(name)} />
   )
 }
 
 function FileItem(props) {
-  const {name} = props
+  const {name, onDelete} = props
 
-  const deleteFile = () => {
-    fetch(apiUrl + name, {method: 'DELETE'}).then(res => console.log(res))
+  const deleteFile = e => {
+    e.preventDefault()
+    e.stopPropagation()
+    fetch(apiUrl + name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
   }
 
   return (
-    <ListItem 
+    <a href={apiUrl + name}> <ListItem 
       primaryText={name}
-      onClick={() => location.href = apiUrl + name}
-      rightIconButton={<IconButton onClick={deleteFile}><ActionDelete /></IconButton>} />
+      rightIconButton={<IconButton onTouchTap={deleteFile}><ActionDelete /></IconButton>} /> </a>
   )
 }
 

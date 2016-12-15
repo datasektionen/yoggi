@@ -3,12 +3,12 @@ from os.path import join, exists
 from magic import from_buffer, from_file
 from requests import get
 from json import dumps
+from mimetypes import types_map
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.urls import url_decode, url_quote
 
 import s3
-
 
 class ParseQuery:
     def any(self, request, response):
@@ -31,7 +31,8 @@ class AuthToken:
         self.api_key = getenv('LOGIN_API_KEY')
 
     def any(self, request, response):
-        response.user = self.validate_user(response.params.get('token'))
+        token = response.params.get('token') or request.form.get('token')
+        response.user = self.validate_user(token)
 
     def validate_user(self, token):
         url      = 'https://login2.datasektionen.se/verify/{}'.format(token)
@@ -71,8 +72,10 @@ class S3Handler:
         if obj:
             response.response = obj['Body']._raw_stream
             response.mimetype = obj['ContentType']
+            if 'filename' in obj['Metadata']:
+                response.headers.set('Content-Disposition', 'inline; filename="{}"'.format(obj['Metadata']['filename']))
         else:
-            response.data = 'Not found'
+            response.data = 'Cannot GET ' + request.path
             response.status_code = 404
 
         return True
@@ -84,12 +87,14 @@ class S3Handler:
             file = request.files['file']
     
             mimetype = from_buffer(file.stream.read(1024), mime=True)
-    
-            response.data = dumps(s3.put(path, file, response.user, mimetype))
+            
+            s3.put(path, file, response.user, mimetype)
+
+            response.data = 'That probably worked...'
         
         else:
+            response.data = 'Not allowed'
             response.status_code = 401
-            response.response = 'Not allowed'
         
         return True
     
@@ -97,7 +102,8 @@ class S3Handler:
         path = request.path[1:]
     
         if s3.owner(path) == response.user:
-            response.data = dumps(s3.delete(path))
+            s3.delete(path)
+            response.data = 'That probably worked...'
         else:
             response.data = 'Not allowed'
             response.status_code = 401

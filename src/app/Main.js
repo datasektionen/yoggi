@@ -3,12 +3,15 @@
  * which incorporates components provided by Material-UI.
  */
 import React, {Component} from 'react';
-import RaisedButton from 'material-ui/RaisedButton';
+
 import Dialog from 'material-ui/Dialog';
-import {deepOrange400, deepOrange500} from 'material-ui/styles/colors';
+import RaisedButton from 'material-ui/RaisedButton';
 import FlatButton from 'material-ui/FlatButton';
+import TextField from 'material-ui/TextField';
+
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import {deepOrange400, deepOrange500} from 'material-ui/styles/colors';
 
 import Browser from './Browser'
 
@@ -26,12 +29,20 @@ const muiTheme = getMuiTheme({
   },
 })
 
+const apiUrl = 'http://localhost:5000/'
+
 class Main extends Component {
   constructor(props, context) {
     super(props, context);
 
     this.state = {
       open: false,
+      folder: '',
+      folders: [],
+      files: [],
+      file: '',
+      body: false,
+      token: location.search.substr(1).split("=")[1]
     }
   }
 
@@ -41,13 +52,68 @@ class Main extends Component {
     })
   }
 
-  uploadTap = () => {
+  uploadClick = () => {
     this.setState({
       open: true
     })
   }
 
+  doUpload = () => {
+    const {file, folder, body} = this.state
+    if(file) {
+      fetch(apiUrl + file, {
+          method: 'POST',
+          body: body
+        }).then(response => response.text())
+          .then(text => {
+            this.setState({response: text, open: false})
+            this.list(folder, 'files')
+          })
+    }
+  }
+
+  onDelete = () => {
+    this.list(this.state.folder, 'files')
+  }
+
+  textChange = e => {
+    this.setState({file: e.target.value})
+  }
+
+  fileChange = e => {
+    const files = e.target.files || e.dataTransfer.files
+
+    if(!files.length) return
+
+    const file = files[0]
+    const body = new FormData()
+
+    body.append('file', file)
+    body.append('token', this.state.token)
+
+    this.setState({body})
+  }
+
+  changeFolder = folder => {
+    this.list(folder, 'files')
+    this.list(folder, 'folders')
+    this.setState({folder})
+  }
+
+  list = (folder, type) => {
+    return fetch(apiUrl + folder + '?list=' + type)
+      .then(res => res.json())
+      .then(res => {
+        this.setState({[type]: res})
+      })
+  }
+
+  componentDidMount() {
+    this.changeFolder('')
+  }
+
   render() {
+    const {files, folders, folder, token} = this.state
     return (
       <MuiThemeProvider muiTheme={muiTheme}>
         <div>
@@ -60,38 +126,62 @@ class Main extends Component {
                   <h2>Yoggi</h2>
                 </div>
                 <div className="header-right col-md-2">
-                  <RaisedButton
-                    label="Upload"
-                    primary={true}
-                    onTouchTap={this.uploadTap}
-                  />
+                  <a href="#" className="primary-action" onTouchTap={this.uploadClick}>Upload</a>
                 </div>
               </div>
             </div>
           </header>
           <div id="content">
-            <Dialog
+            <Upload
               open={this.state.open}
-              title="Super Secret Password"
-              actions={[
-                <FlatButton label="Cancel" primary={true} onTouchTap={this.uploadClose} />,
-                <FlatButton label="Upload" primary={true} onTouchTap={this.doUpload} />]}
-              onRequestClose={this.uploadClose}
-            >
-              <RaisedButton
-                containerElement='label'
-                label='Select file'>
-                  <input type="file" />
-              </RaisedButton>
-            </Dialog>
+              uploadClose={this.uploadClose}
+              doUpload={this.doUpload}
+              fileChange={this.fileChange}
+              textChange={this.textChange}
+            />
 
-            <Browser />
+            <Browser 
+              files={files}
+              folders={folders}
+              folder={folder}
+              token={token}
+              list={this.list}
+              changeFolder={this.changeFolder}
+              onDelete={this.onDelete}
+            />
 
           </div>
         </div>
       </MuiThemeProvider>
-    );
+    )
   }
+}
+
+function Upload(props) {
+  const {open, uploadClose, doUpload, fileChange, textChange} = props
+  return (<Dialog
+    open={open}
+    title="Upload a file"
+    actions={[<FlatButton label="Cancel" onTouchTap={uploadClose} />,
+              <RaisedButton label="Upload" primary={true} onTouchTap={doUpload} />]}
+    onRequestClose={uploadClose}>
+    <TextField
+      autoFocus
+      fullWidth={true}
+      hintText="Desired filename (including folder)"
+      onChange={textChange}
+    />
+    <RaisedButton
+      fullWidth={true}
+      containerElement='label'
+      label='Select file'>
+        <input 
+          type="file"
+          style={{display: 'none'}}
+          onChange={fileChange}
+        />
+    </RaisedButton>
+  </Dialog>)
 }
 
 export default Main

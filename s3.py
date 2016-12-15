@@ -12,9 +12,9 @@ def owner(path):
 
 def list(prefix, type='files'):
     if type == 'files':
-        return [x.key for x in bucket.objects.filter(Prefix=prefix, Delimiter='/')]
+        return [x.key for x in bucket.objects.filter(Prefix=prefix, Delimiter='/') if not x.key.endswith('/')]
     else:
-        return [x.key for x in bucket.objects.filter(Prefix=prefix) if x.key.endswith('/')]
+        return [x.key for x in bucket.objects.filter(Prefix=prefix) if x.key.endswith('/') and x.key != prefix]
 
 def get(path):
     if exists(path): return bucket.Object(path).get()
@@ -30,7 +30,8 @@ def put(path, file, owner, mimetype):
         Body=file,
         ContentType=mimetype,
         Metadata={
-            'owner': owner
+            'owner': owner,
+            'filename': file.filename
         }
     )
 
