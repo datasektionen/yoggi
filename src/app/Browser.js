@@ -13,8 +13,6 @@ import Divider from 'material-ui/Divider';
 import IconButton from 'material-ui/IconButton'
 import ActionDelete from 'material-ui/svg-icons/action/delete'
 
-const apiUrl = 'http://localhost:5000/'
-
 function Browser(props) {
   const {folder, files, folders, token, list, changeFolder, onDelete} = props
   return (<div>
@@ -59,11 +57,11 @@ function FileItem(props) {
   const deleteFile = e => {
     e.preventDefault()
     e.stopPropagation()
-    fetch(apiUrl + name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
+    fetch(name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
   }
 
   return (
-    <a href={apiUrl + name}> <ListItem 
+    <a href={name}> <ListItem 
       primaryText={name}
       rightIconButton={<IconButton onTouchTap={deleteFile}><ActionDelete /></IconButton>} /> </a>
   )

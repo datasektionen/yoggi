@@ -29,8 +29,6 @@ const muiTheme = getMuiTheme({
   },
 })
 
-const apiUrl = 'http://localhost:5000/'
-
 class Main extends Component {
   constructor(props, context) {
     super(props, context);
@@ -61,7 +59,7 @@ class Main extends Component {
   doUpload = () => {
     const {file, folder, body} = this.state
     if(file) {
-      fetch(apiUrl + file, {
+      fetch(file, {
           method: 'POST',
           body: body
         }).then(response => response.text())
@@ -101,7 +99,7 @@ class Main extends Component {
   }
 
   list = (folder, type) => {
-    return fetch(apiUrl + folder + '?list=' + type)
+    return fetch(folder + '?list=' + type)
       .then(res => res.json())
       .then(res => {
         this.setState({[type]: res})
