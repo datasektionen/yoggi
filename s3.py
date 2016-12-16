@@ -1,7 +1,7 @@
 import boto3
 
-s3 = boto3.resource('s3')
-bucket = s3.Bucket('dsekt-assets')
+client = boto3.client('s3')
+bucket = boto3.resource('s3').Bucket('dsekt-assets')
 
 def exists(path):
     items = [path, path + '/'] #check both the path and a folder at that path
@@ -10,11 +10,16 @@ def exists(path):
 def owner(path):
     if exists(path): return bucket.Object(path).metadata['owner']
 
-def list(prefix, type='files'):
-    if type == 'files':
-        return [x.key for x in bucket.objects.filter(Prefix=prefix, Delimiter='/') if not x.key.endswith('/')]
-    else:
-        return [x.key for x in bucket.objects.filter(Prefix=prefix) if x.key.endswith('/') and x.key != prefix]
+def list(prefix):
+    response = client.list_objects_v2(
+        Bucket='dsekt-assets',
+        Delimiter='/',
+        Prefix=prefix)
+
+    files = [x['Key'] for x in response['Contents']] if 'Contents' in response else []
+    folders = [x['Prefix'] for x in response['CommonPrefixes']] if 'CommonPrefixes' in response else []
+
+    return {'files': files, 'folders': folders}
 
 def get(path):
     if exists(path): return bucket.Object(path).get()

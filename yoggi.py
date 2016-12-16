@@ -21,8 +21,8 @@ class CORS:
 class ListFiles:
     def GET(self, request, response):
         list_type = response.params.get('list')
-        if list_type:
-            response.response = dumps(s3.list(request.path[1:], list_type))
+        if not list_type is None:
+            response.response = dumps(s3.list(request.path[1:]))
 
             return True
 

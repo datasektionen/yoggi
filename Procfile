@@ -1,1 +1,1 @@
-web: gunicorn yoggi:werk
+web: npm run build; gunicorn yoggi:werk

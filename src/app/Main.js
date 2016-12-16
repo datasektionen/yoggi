@@ -93,9 +93,12 @@ class Main extends Component {
   }
 
   changeFolder = folder => {
-    this.list(folder, 'files')
-    this.list(folder, 'folders')
-    this.setState({folder})
+    fetch(folder + '?list')
+      .then(res => res.json())
+      .then(res => {
+        this.setState(res)
+        this.setState({folder})
+      })
   }
 
   list = (folder, type) => {
