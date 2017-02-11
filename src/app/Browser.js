@@ -15,11 +15,8 @@ import ActionDelete from 'material-ui/svg-icons/action/delete'
 
 function Browser(props) {
   const {folder, files, folders, token, list, changeFolder, onDelete} = props
+
   return (<div>
-    {folder ? <RaisedButton 
-                primary={true}
-                onTouchTap={e => changeFolder('')}
-                label='Back to root' /> : false}
     <Subheader>{folder}</Subheader>
     <Subheader>Folders</Subheader>
     <List>
@@ -47,7 +44,7 @@ function FolderItem(props) {
   return (
     <ListItem
       primaryText={name}
-      onTouchTap={() => changeFolder(name)} />
+      onTouchTap={() => changeFolder('/' + name)} />
   )
 }
 
@@ -61,7 +58,7 @@ function FileItem(props) {
   }
 
   return (
-    <a href={name}> <ListItem 
+    <a href={`/${name}`}> <ListItem 
       primaryText={name}
       rightIconButton={<IconButton onTouchTap={deleteFile}><ActionDelete /></IconButton>} /> </a>
   )

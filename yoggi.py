@@ -49,7 +49,7 @@ class Static:
         self.path = path
 
     def GET(self, request, response):
-        if request.path == '/':
+        if request.path.endswith('/'):
             if not response.user:
                 response.data = ''
                 response.location = 'https://login2.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='

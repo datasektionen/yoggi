@@ -35,13 +35,15 @@ class Main extends Component {
 
     this.state = {
       open: false,
-      folder: '',
+      folder: window.location.pathname,
       folders: [],
       files: [],
       file: '',
       body: false,
       token: location.search.substr(1).split("=")[1]
     }
+
+    window.onpopstate = e => this.changeFolder(e.state.folder)
   }
 
   uploadClose = () => {
@@ -92,12 +94,19 @@ class Main extends Component {
     this.setState({body})
   }
 
+  parrentFolder = e => {
+    e.preventDefault()
+    const {folder} = this.state
+    const parrent = folder.split('/').slice(0, -2).join('/')
+    this.changeFolder(parrent + '/')
+  }
+
   changeFolder = folder => {
     fetch(folder + '?list')
       .then(res => res.json())
       .then(res => {
-        this.setState(res)
-        this.setState({folder})
+        this.setState({folder, ...res})
+        history.pushState({folder}, `Yoggi - ${folder}`, folder);
       })
   }
 
@@ -110,7 +119,7 @@ class Main extends Component {
   }
 
   componentDidMount() {
-    this.changeFolder('')
+    this.changeFolder(this.state.folder)
   }
 
   render() {
@@ -122,6 +131,7 @@ class Main extends Component {
             <div className="header-inner">
               <div className="row">
                 <div className="header-left col-md-2">
+                  <a href="../" onTouchTap={this.parrentFolder}>« Back</a>
                 </div>
                 <div className="col-md-8">
                   <h2>Yoggi</h2>
@@ -142,7 +152,7 @@ class Main extends Component {
             />
 
             <Browser 
-              files={files}
+              files={files.filter(file => '/' + file != folder)}
               folders={folders}
               folder={folder}
               token={token}
