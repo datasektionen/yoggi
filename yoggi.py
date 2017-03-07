@@ -7,6 +7,7 @@ from mimetypes import types_map
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.urls import url_decode, url_quote
+from werkzeug.utils import redirect
 
 import s3
 
@@ -24,7 +25,7 @@ class ListFiles:
         if not list_type is None:
             response.response = dumps(s3.list(request.path[1:]))
 
-            return True
+            return response
 
 class AuthToken:
     def __init__(self):
@@ -51,10 +52,8 @@ class Static:
     def GET(self, request, response):
         if request.path.endswith('/'):
             if not response.user:
-                response.data = ''
-                response.location = 'https://login2.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
-                response.status_code = 302
-                return True
+                url = 'https://login2.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
+                return redirect(url)
 
             request.path = '/index.html'
 
@@ -63,22 +62,19 @@ class Static:
             response.response = open(real_path, 'r')
             response.mimetype = from_file(real_path)
             
-            return True
+            return response
 
 class S3Handler:
     def GET(self, request, response):
-        obj = s3.get(request.path[1:])
+        url = s3.get_url(request.path[1:])
 
-        if obj:
-            response.response = obj['Body']._raw_stream
-            response.mimetype = obj['ContentType']
-            if 'filename' in obj['Metadata']:
-                response.headers.set('Content-Disposition', 'inline; filename="{}"'.format(obj['Metadata']['filename']))
+        if url:
+            response = redirect(url)
         else:
             response.data = 'Cannot GET ' + request.path
             response.status_code = 404
 
-        return True
+        return response
     
     def POST(self, request, response):
         if response.user:
@@ -96,7 +92,7 @@ class S3Handler:
             response.data = 'Not allowed'
             response.status_code = 401
         
-        return True
+        return response
     
     def DELETE(self, request, response):
         path = request.path[1:]
@@ -108,7 +104,7 @@ class S3Handler:
             response.data = 'Not allowed'
             response.status_code = 401
 
-        return True
+        return response
 
 middlewarez = [
     ParseQuery(),
@@ -125,12 +121,12 @@ def werk(request):
 
     for middleware in middlewarez:
         if 'any' in dir(middleware):
-            if middleware.any(request, response): break
+            finished_response = middleware.any(request, response)
+        elif request.method in dir(middleware):
+            finished_response = middleware.__getattribute__(request.method)(request, response)
 
-        if request.method in dir(middleware):
-            if middleware.__getattribute__(request.method)(request, response): break
-
-    return response
+        if finished_response: return finished_response
+        elif finished_response is not None: response = finished_response
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple

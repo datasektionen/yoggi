@@ -1,7 +1,9 @@
 import boto3
 
+BUCKET = 'dsekt-assets'
+
 client = boto3.client('s3')
-bucket = boto3.resource('s3').Bucket('dsekt-assets')
+bucket = boto3.resource('s3').Bucket(BUCKET)
 
 def exists(path):
     items = [path, path + '/'] #check both the path and a folder at that path
@@ -23,6 +25,16 @@ def list(prefix):
 
 def get(path):
     if exists(path): return bucket.Object(path).get()
+
+def get_url(path):
+    if exists(path):
+        return client.generate_presigned_url(
+            'get_object',
+            Params = {
+                'Bucket': BUCKET,
+                'Key': path
+            },
+            ExpiresIn = 1800)
 
 def put(path, file, owner, mimetype):
     if exists(path):
