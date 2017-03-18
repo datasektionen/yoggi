@@ -1,5 +1,7 @@
 import boto3
 
+from urllib.parse import quote
+
 BUCKET = 'dsekt-assets'
 
 client = boto3.client('s3')
@@ -48,7 +50,7 @@ def put(path, file, owner, mimetype):
         ContentType=mimetype,
         Metadata={
             'owner': owner,
-            'filename': file.filename
+            'filename': quote(file.filename)
         }
     )
 
