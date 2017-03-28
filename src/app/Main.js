@@ -43,7 +43,9 @@ class Main extends Component {
       token: location.search.substr(1).split("=")[1]
     }
 
-    window.onpopstate = e => this.changeFolder(e.state.folder)
+    window.onpopstate = e => {
+      if(e.state && e.state.folder) this.list(e.state.folder)
+    }
   }
 
   uploadClose = () => {
@@ -67,13 +69,14 @@ class Main extends Component {
         }).then(response => response.text())
           .then(text => {
             this.setState({response: text, open: false})
-            this.list(folder, 'files')
+            this.list(folder)
           })
     }
   }
 
-  onDelete = () => {
-    this.list(this.state.folder, 'files')
+  onDelete = res => {
+    res.text().then(text => console.log(text))
+    this.list(this.state.folder)
   }
 
   textChange = e => {
@@ -110,11 +113,11 @@ class Main extends Component {
       })
   }
 
-  list = (folder, type) => {
-    return fetch(folder + '?list=' + type)
+  list = folder => {
+    return fetch(folder + '?list')
       .then(res => res.json())
       .then(res => {
-        this.setState({[type]: res})
+        this.setState({folder, ...res})
       })
   }
 
@@ -156,7 +159,6 @@ class Main extends Component {
               folders={folders}
               folder={folder}
               token={token}
-              list={this.list}
               changeFolder={this.changeFolder}
               onDelete={this.onDelete}
             />

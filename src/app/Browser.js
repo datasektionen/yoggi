@@ -14,7 +14,7 @@ import IconButton from 'material-ui/IconButton'
 import ActionDelete from 'material-ui/svg-icons/action/delete'
 
 function Browser(props) {
-  const {folder, files, folders, token, list, changeFolder, onDelete} = props
+  const {folder, files, folders, token, changeFolder, onDelete} = props
 
   return (<div>
     <Subheader>{folder}</Subheader>
@@ -57,10 +57,19 @@ function FileItem(props) {
     fetch(name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
   }
 
+  const deleteButton = (
+    <IconButton
+      style={{boxShadow: 'none'}}
+      hoveredStyle={{boxShadow: 'none'}}
+      onTouchTap={deleteFile}>
+      <ActionDelete />
+    </IconButton>
+  )
+
   return (
     <a href={`/${name}`}> <ListItem 
       primaryText={name}
-      rightIconButton={<IconButton onTouchTap={deleteFile}><ActionDelete /></IconButton>} /> </a>
+      rightIconButton={deleteButton} /> </a>
   )
 }
 

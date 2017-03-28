@@ -23,7 +23,7 @@ class ListFiles:
     def GET(self, request, response):
         list_type = response.params.get('list')
         if not list_type is None:
-            response.response = dumps(s3.list(request.path[1:]))
+            response.data = dumps(s3.list(request.path[1:]))
 
             return response
 
@@ -44,6 +44,16 @@ class AuthToken:
             return response.json()['user']
         else:
             return False
+
+class PlsPermission:
+    def any(self, request, response):
+        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/admin'.format(response.user)
+        response = get(url)
+
+        if response.status_code == 200 and response.json() == True:
+            response.is_admin = True
+        else:
+            response.is_admin = False
 
 class Static:
     def __init__(self, path='static'):
@@ -97,7 +107,7 @@ class S3Handler:
     def DELETE(self, request, response):
         path = request.path[1:]
     
-        if s3.owner(path) == response.user:
+        if s3.owner(path) == response.user or response.is_admin:
             s3.delete(path)
             response.data = 'That probably worked...'
         else:
@@ -111,6 +121,7 @@ middlewarez = [
     CORS(),
     ListFiles(),
     AuthToken(),
+    PlsPermission(),
     Static('build'),
     S3Handler()
 ]
