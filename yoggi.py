@@ -48,9 +48,9 @@ class AuthToken:
 class PlsPermission:
     def any(self, request, response):
         url = 'https://pls.datasektionen.se/api/user/{}/yoggi/admin'.format(response.user)
-        response = get(url)
+        res = get(url)
 
-        if response.status_code == 200 and response.json() == True:
+        if res.status_code == 200 and res.json() == True:
             response.is_admin = True
         else:
             response.is_admin = False
