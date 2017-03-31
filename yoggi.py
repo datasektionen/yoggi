@@ -46,14 +46,17 @@ class AuthToken:
             return False
 
 class PlsPermission:
-    def any(self, request, response):
-        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/admin'.format(response.user)
+    def POST(self, request, response):
+        response.is_admin = self.has_permission(response.user, 'admin')
+
+    def DELETE(self, request, response):
+        response.is_admin = self.has_permission(response.user, 'admin')
+
+    def has_permission(self, user, permission):
+        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/{}'.format(user, permission)
         res = get(url)
 
-        if res.status_code == 200 and res.json() == True:
-            response.is_admin = True
-        else:
-            response.is_admin = False
+        return res.status_code == 200 and res.json() == True
 
 class Static:
     def __init__(self, path='static'):
@@ -106,7 +109,7 @@ class S3Handler:
     
     def DELETE(self, request, response):
         path = request.path[1:]
-    
+
         if s3.owner(path) == response.user or response.is_admin:
             s3.delete(path)
             response.data = 'That probably worked...'

@@ -54,7 +54,7 @@ function FileItem(props) {
   const deleteFile = e => {
     e.preventDefault()
     e.stopPropagation()
-    fetch(name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
+    fetch('/' + name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
   }
 
   const deleteButton = (
