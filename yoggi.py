@@ -83,6 +83,7 @@ class S3Handler:
 
         if url:
             response = redirect(url)
+            response.cache_control.max_age = 1800
         else:
             response.data = 'Cannot GET ' + request.path
             response.status_code = 404
