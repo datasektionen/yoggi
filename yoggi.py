@@ -47,16 +47,16 @@ class AuthToken:
 
 class PlsPermission:
     def POST(self, request, response):
-        response.is_admin = self.has_permission(response.user, 'admin')
+        response.perms = self.has_permission(response.user)
 
     def DELETE(self, request, response):
-        response.is_admin = self.has_permission(response.user, 'admin')
+        response.perms = self.has_permission(response.user)
 
     def has_permission(self, user, permission):
-        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/{}'.format(user, permission)
+        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/'.format(user)
         res = get(url)
 
-        return res.status_code == 200 and res.json() == True
+        return res.json()
 
 class Static:
     def __init__(self, path='static'):
@@ -110,8 +110,9 @@ class S3Handler:
     
     def DELETE(self, request, response):
         path = request.path[1:]
+        folder = path.split('/')
 
-        if s3.owner(path) == response.user or response.is_admin:
+        if s3.owner(path) == response.user or ((folder[0] if len(folder) > 1 else '~') in response.perms):
             s3.delete(path)
             response.data = 'That probably worked...'
         else:
