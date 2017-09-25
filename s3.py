@@ -36,7 +36,7 @@ def get_url(path):
                 'Bucket': BUCKET,
                 'Key': path
             },
-            ExpiresIn = 1801)
+            ExpiresIn = 60*60*24*365)
 
 def put(path, file, owner, mimetype):
     if exists(path):
