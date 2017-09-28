@@ -91,8 +91,10 @@ class S3Handler:
         return response
     
     def POST(self, request, response):
-        if response.user:
-            path = request.path[1:]
+        path = request.path[1:]
+        folder = path.split('/')
+
+        if response.user and ((folder[0] if len(folder) > 1 else '~') in response.perms):
     
             file = request.files['file']
     
