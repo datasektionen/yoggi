@@ -44,7 +44,7 @@ function FolderItem(props) {
   return (
     <ListItem
       primaryText={name}
-      onTouchTap={() => changeFolder('/' + name)} />
+      onTouchTap={() => changeFolder(`/${name}`)} />
   )
 }
 
@@ -54,14 +54,14 @@ function FileItem(props) {
   const deleteFile = e => {
     e.preventDefault()
     e.stopPropagation()
-    fetch('/' + name + '?token=' + props.token, {method: 'DELETE'}).then(onDelete)
+    if (confirm(`Delete ${name}?`)) fetch(`/${name}?token=${props.token}`, {method: 'DELETE'}).then(onDelete)
   }
 
   const deleteButton = (
     <IconButton
       style={{boxShadow: 'none'}}
       hoveredStyle={{boxShadow: 'none'}}
-      onTouchTap={deleteFile}>
+      onClick={deleteFile}>
       <ActionDelete />
     </IconButton>
   )

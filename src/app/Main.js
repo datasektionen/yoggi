@@ -39,8 +39,9 @@ class Main extends Component {
       folders: [],
       files: [],
       file: '',
+      fileName: false,
       body: false,
-      token: location.search.substr(1).split("=")[1]
+      token: location.search.substr(1).split('=')[1],
     }
 
     window.onpopstate = e => {
@@ -50,13 +51,15 @@ class Main extends Component {
 
   uploadClose = () => {
     this.setState({
-      open: false
+      open: false,
+      body: false,
+      fileName: false,
     })
   }
 
   uploadClick = () => {
     this.setState({
-      open: true
+      open: true,
     })
   }
 
@@ -65,10 +68,15 @@ class Main extends Component {
     if(file) {
       fetch(file, {
           method: 'POST',
-          body: body
+          body: body,
         }).then(response => response.text())
           .then(text => {
-            this.setState({response: text, open: false})
+            this.setState({
+              response: text,
+              open: false,
+              body: false,
+              fileName: false,
+            })
             this.list(folder)
           })
     }
@@ -90,22 +98,26 @@ class Main extends Component {
 
     const file = files[0]
     const body = new FormData()
+    const name = file.name
 
     body.append('file', file)
     body.append('token', this.state.token)
 
-    this.setState({body})
+    this.setState({
+        body,
+        fileName: name,
+    })
   }
 
   parrentFolder = e => {
     e.preventDefault()
     const {folder} = this.state
     const parrent = folder.split('/').slice(0, -2).join('/')
-    this.changeFolder(parrent + '/')
+    this.changeFolder(`${parrent}/`)
   }
 
   changeFolder = folder => {
-    fetch(folder + '?list')
+    fetch(`${folder}?list`)
       .then(res => res.json())
       .then(res => {
         this.setState({folder, ...res})
@@ -114,7 +126,7 @@ class Main extends Component {
   }
 
   list = folder => {
-    return fetch(folder + '?list')
+    return fetch(`${folder}?list`)
       .then(res => res.json())
       .then(res => {
         this.setState({folder, ...res})
@@ -151,11 +163,12 @@ class Main extends Component {
               uploadClose={this.uploadClose}
               doUpload={this.doUpload}
               fileChange={this.fileChange}
+              fileName={this.state.fileName}
               textChange={this.textChange}
             />
 
             <Browser 
-              files={files.filter(file => '/' + file != folder)}
+              files={files.filter(file => `/${file}` != folder)}
               folders={folders}
               folder={folder}
               token={token}
@@ -171,26 +184,37 @@ class Main extends Component {
 }
 
 function Upload(props) {
-  const {open, uploadClose, doUpload, fileChange, textChange} = props
+  const {open, uploadClose, doUpload, fileChange, fileName, textChange} = props
   return (<Dialog
     open={open}
     title="Upload a file"
-    actions={[<FlatButton label="Cancel" onTouchTap={uploadClose} />,
-              <RaisedButton label="Upload" primary={true} onTouchTap={doUpload} />]}
+    actions={[
+      <FlatButton label="Cancel" onTouchTap={uploadClose} />,
+      <RaisedButton label="Upload" primary={true} onTouchTap={doUpload} />,
+    ]}
     onRequestClose={uploadClose}>
     <TextField
+      inputStyle={{
+        textAlign: 'center',
+      }}
       autoFocus
       fullWidth={true}
       hintText="Desired filename (including folder)"
+      hintStyle={{
+        textAlign: 'center',
+        width: '100%',
+      }}
       onChange={textChange}
     />
     <RaisedButton
       fullWidth={true}
       containerElement='label'
-      label='Select file'>
+      label={fileName || 'Select file'}>
         <input 
-          type="file"
-          style={{display: 'none'}}
+          type='file'
+          style={{
+            display: 'none',
+          }}
           onChange={fileChange}
         />
     </RaisedButton>
