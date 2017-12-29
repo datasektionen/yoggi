@@ -73,13 +73,14 @@ class Static:
             response.response = open(real_path, 'r')
             response.mimetype = from_file(real_path)
 
-            response.set_cookie('user', response.user)
-            response.set_cookie('permissions', ', '.join(response.perms))
+            if response.user:
+                response.set_cookie('user', response.user)
+                response.set_cookie('permissions', ', '.join(response.perms))
 
             return response
 
 class S3Handler:
-    def has_access(self, path):
+    def has_access(self, response, path):
         if not response.user:
             return False
 
@@ -107,7 +108,7 @@ class S3Handler:
         path = request.path[1:]
         folder = path.split('/')
 
-        if this.has_access(path):
+        if self.has_access(response, path):
 
             file = request.files['file']
 
@@ -127,7 +128,7 @@ class S3Handler:
         path = request.path[1:]
         folder = path.split('/')
 
-        if s3.owner(path) == response.user or this.has_access(path):
+        if s3.owner(path) == response.user or self.has_access(response, path):
             s3.delete(path)
             response.data = 'That probably worked...'
         else:
