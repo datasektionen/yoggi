@@ -1,1 +1,1 @@
-web: gunicorn yoggi:werk
+web: gunicorn yoggi:yoggi

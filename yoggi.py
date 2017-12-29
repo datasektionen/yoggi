@@ -5,6 +5,7 @@ from requests import get
 from json import dumps
 from mimetypes import types_map
 
+from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.wrappers import Request, Response
 from werkzeug.urls import url_decode, url_quote
 from werkzeug.utils import redirect
@@ -46,10 +47,7 @@ class AuthToken:
             return False
 
 class PlsPermission:
-    def POST(self, request, response):
-        response.perms = self.has_permission(response.user)
-
-    def DELETE(self, request, response):
+    def any(self, request, response):
         response.perms = self.has_permission(response.user)
 
     def has_permission(self, user):
@@ -59,7 +57,7 @@ class PlsPermission:
         return res.json()
 
 class Static:
-    def __init__(self, path='static'):
+    def __init__(self, path):
         self.path = path
 
     def GET(self, request, response):
@@ -74,10 +72,25 @@ class Static:
         if exists(real_path):
             response.response = open(real_path, 'r')
             response.mimetype = from_file(real_path)
-            
+
+            response.set_cookie('user', response.user)
+            response.set_cookie('permissions', ', '.join(response.perms))
+
             return response
 
 class S3Handler:
+    def has_access(self, path):
+        if not response.user:
+            return False
+
+        if '*' in response.perms:
+            return True
+
+        path_items = path.split('/')
+        folder = folder[0] if len(folder) > 1 else '~'
+
+        return folder in response.perms
+
     def GET(self, request, response):
         url = s3.get_url(request.path[1:])
 
@@ -89,32 +102,32 @@ class S3Handler:
             response.status_code = 404
 
         return response
-    
+
     def POST(self, request, response):
         path = request.path[1:]
         folder = path.split('/')
 
-        if response.user and ((folder[0] if len(folder) > 1 else '~') in response.perms):
-    
+        if this.has_access(path):
+
             file = request.files['file']
-    
+
             mimetype = from_buffer(file.stream.read(1024), mime=True)
-            
+
             s3.put(path, file, response.user, mimetype)
 
             response.data = 'That probably worked...'
-        
+
         else:
             response.data = 'Not allowed'
             response.status_code = 401
-        
+
         return response
-    
+
     def DELETE(self, request, response):
         path = request.path[1:]
         folder = path.split('/')
 
-        if s3.owner(path) == response.user or ((folder[0] if len(folder) > 1 else '~') in response.perms):
+        if s3.owner(path) == response.user or this.has_access(path):
             s3.delete(path)
             response.data = 'That probably worked...'
         else:
@@ -134,7 +147,7 @@ middlewarez = [
 ]
 
 @Request.application
-def werk(request):
+def request_handler(request):
     response = Response()
 
     for middleware in middlewarez:
@@ -146,7 +159,9 @@ def werk(request):
         if finished_response: return finished_response
         elif finished_response is not None: response = finished_response
 
+yoggi = ProxyFix(request_handler)
+
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
 
-    run_simple('localhost', getenv('PORT') or 5000, werk, use_debugger=True, use_reloader=True)
+    run_simple('localhost', getenv('PORT') or 5000, request_handler, use_debugger=True, use_reloader=True)

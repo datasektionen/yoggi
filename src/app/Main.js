@@ -3,11 +3,13 @@
  * which incorporates components provided by Material-UI.
  */
 import React, {Component} from 'react';
+import cookie from 'cookie';
 
 import Dialog from 'material-ui/Dialog';
 import RaisedButton from 'material-ui/RaisedButton';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import Snackbar from 'material-ui/Snackbar';
 
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
@@ -39,8 +41,11 @@ class Main extends Component {
       folders: [],
       files: [],
       file: '',
+      filename: '',
       body: false,
-      token: location.search.substr(1).split("=")[1]
+      response: false,
+      token: location.search.substr(1).split("=")[1],
+      ...cookie.parse(document.cookie)
     }
 
     window.onpopstate = e => {
@@ -69,14 +74,18 @@ class Main extends Component {
         }).then(response => response.text())
           .then(text => {
             this.setState({response: text, open: false})
+            console.log(text)
             this.list(folder)
           })
     }
   }
 
   onDelete = res => {
-    res.text().then(text => console.log(text))
-    this.list(this.state.folder)
+    res.text().then(text => {
+      this.setState({response: text})
+      console.log(text)
+      this.list(this.state.folder)
+    })
   }
 
   textChange = e => {
@@ -94,7 +103,7 @@ class Main extends Component {
     body.append('file', file)
     body.append('token', this.state.token)
 
-    this.setState({body})
+    this.setState({body, filename: file.name})
   }
 
   parrentFolder = e => {
@@ -146,15 +155,19 @@ class Main extends Component {
             </div>
           </header>
           <div id="content">
+          {this.state.permissions && this.state.permissions.length ?
             <Upload
               open={this.state.open}
+              filename={this.state.filename}
+              permissions={this.state.permissions}
               uploadClose={this.uploadClose}
               doUpload={this.doUpload}
               fileChange={this.fileChange}
               textChange={this.textChange}
-            />
+            /> : null
+          }
 
-            <Browser 
+            <Browser
               files={files.filter(file => '/' + file != folder)}
               folders={folders}
               folder={folder}
@@ -164,6 +177,12 @@ class Main extends Component {
             />
 
           </div>
+          <Snackbar
+            open={this.state.response}
+            message={this.state.response}
+            autoHideDuration={4000}
+            onRequestClose={() => this.setState({response: false})}
+          />
         </div>
       </MuiThemeProvider>
     )
@@ -171,13 +190,17 @@ class Main extends Component {
 }
 
 function Upload(props) {
-  const {open, uploadClose, doUpload, fileChange, textChange} = props
+  const {open, filename, permissions} = props
+  const {uploadClose, doUpload, fileChange, textChange} = props
   return (<Dialog
     open={open}
     title="Upload a file"
     actions={[<FlatButton label="Cancel" onTouchTap={uploadClose} />,
               <RaisedButton label="Upload" primary={true} onTouchTap={doUpload} />]}
     onRequestClose={uploadClose}>
+    <p>
+      You're allowed to upload files to the following folders: { permissions }
+    </p>
     <TextField
       autoFocus
       fullWidth={true}
@@ -187,8 +210,8 @@ function Upload(props) {
     <RaisedButton
       fullWidth={true}
       containerElement='label'
-      label='Select file'>
-        <input 
+      label={filename || 'Select file'}>
+        <input
           type="file"
           style={{display: 'none'}}
           onChange={fileChange}
