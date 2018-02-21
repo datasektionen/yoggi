@@ -48,7 +48,7 @@ class AuthToken:
 
 class PlsPermission:
     def any(self, request, response):
-        response.perms = self.has_permission(response.user)
+        response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
         url = 'https://pls.datasektionen.se/api/user/{}/yoggi/'.format(user)
@@ -75,7 +75,7 @@ class Static:
 
             if response.user:
                 response.set_cookie('user', response.user)
-                response.set_cookie('permissions', ', '.join(response.perms))
+                response.set_cookie('permissions', ', '.join(response.permissions))
 
             return response
 
@@ -84,13 +84,16 @@ class S3Handler:
         if not response.user:
             return False
 
-        if '*' in response.perms:
+        if '*' in response.permissions:
             return True
 
         path_items = path.split('/')
         folder = folder[0] if len(folder) > 1 else '~'
 
-        return folder in response.perms
+        if folder == '~':
+            return True
+
+        return folder in response.permissions
 
     def GET(self, request, response):
         url = s3.get_url(request.path[1:])
@@ -160,7 +163,7 @@ def request_handler(request):
         if finished_response: return finished_response
         elif finished_response is not None: response = finished_response
 
-yoggi = ProxyFix(request_handler)
+yoggi = ProxyFix(request_handler, num_proxies=2)
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple

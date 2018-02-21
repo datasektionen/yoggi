@@ -158,7 +158,6 @@ class Main extends Component {
             </div>
           </header>
           <div id="content">
-          {this.state.permissions && this.state.permissions.length ?
             <Upload
               open={this.state.open}
               filename={this.state.filename}
@@ -167,8 +166,7 @@ class Main extends Component {
               doUpload={this.doUpload}
               fileChange={this.fileChange}
               textChange={this.textChange}
-            /> : null
-          }
+            />
 
             <Browser
               files={files.filter(file => `/${file}` != folder)}
@@ -204,7 +202,11 @@ function Upload(props) {
     ]}
     onRequestClose={uploadClose}>
     <p>
-      You're allowed to upload files to the following folders: { permissions }
+      Everyone is allowed to upload to the root directory.
+      { permissions.length ? <span>
+        <br />
+        You also have permissions for the following folders: { permissions }
+      </span> : null}
     </p>
     <TextField
       inputStyle={{
