@@ -88,7 +88,7 @@ class S3Handler:
             return True
 
         path_items = path.split('/')
-        folder = folder[0] if len(folder) > 1 else '~'
+        folder = path_items[0] if len(path_items) > 1 else '~'
 
         if folder == '~':
             return True
@@ -122,7 +122,7 @@ class S3Handler:
             response.data = 'That probably worked...'
 
         else:
-            response.data = 'Not allowed'
+            response.data = 'Permission denied in this folder.'
             response.status_code = 401
 
         return response

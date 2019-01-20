@@ -25,18 +25,21 @@ def list(prefix):
 
     return {'files': files, 'folders': folders}
 
+
 def get(path):
     if exists(path): return bucket.Object(path).get()
+
 
 def get_url(path):
     if exists(path):
         return client.generate_presigned_url(
             'get_object',
-            Params = {
+            Params={
                 'Bucket': BUCKET,
                 'Key': path
             },
-            ExpiresIn = 60*60*24*365)
+            ExpiresIn=60*60*24*365)
+
 
 def put(path, file, owner, mimetype):
     if exists(path):
@@ -54,8 +57,9 @@ def put(path, file, owner, mimetype):
         }
     )
 
+
 def delete(path):
-    if not exists(path): 
+    if not exists(path):
         return False
 
     bucket.Object(path).delete()
