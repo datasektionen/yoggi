@@ -37,7 +37,7 @@ class AuthToken:
         response.user = self.validate_user(token)
 
     def validate_user(self, token):
-        url      = 'https://login2.datasektionen.se/verify/{}'.format(token)
+        url      = 'https://login.datasektionen.se/verify/{}'.format(token)
         params   = {'format': 'json', 'api_key': self.api_key}
         response = get(url, params=params)
 
@@ -63,7 +63,7 @@ class Static:
     def GET(self, request, response):
         if request.path.endswith('/'):
             if not response.user:
-                url = 'https://login2.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
+                url = 'https://login.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
                 return redirect(url)
 
             request.path = '/index.html'
