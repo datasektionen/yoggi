@@ -5,7 +5,7 @@ from requests import get
 from json import dumps
 from mimetypes import types_map
 
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Request, Response
 from werkzeug.urls import url_decode, url_quote
 from werkzeug.utils import redirect
@@ -163,7 +163,7 @@ def request_handler(request):
         if finished_response: return finished_response
         elif finished_response is not None: response = finished_response
 
-yoggi = ProxyFix(request_handler, num_proxies=2)
+yoggi = ProxyFix(request_handler)
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
