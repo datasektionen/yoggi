@@ -150,14 +150,22 @@ middlewarez = [
     S3Handler()
 ]
 
+supported_methods = set(["GET", "POST", "DELETE"])
+
 @Request.application
 def request_handler(request):
     response = Response()
 
+    if request.method not in supported_methods:
+        response.data = 'Method Not Allowed'
+        response.status_code = 405
+        return response
+
     for middleware in middlewarez:
-        if 'any' in dir(middleware):
+        d = dir(middleware)
+        if 'any' in d:
             finished_response = middleware.any(request, response)
-        elif request.method in dir(middleware):
+        elif request.method in d:
             finished_response = middleware.__getattribute__(request.method)(request, response)
 
         if finished_response: return finished_response
