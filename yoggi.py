@@ -1,5 +1,5 @@
-from os import getenv
-from os.path import join, exists
+from os import getenv, listdir
+from os.path import join
 from magic import from_buffer, from_file
 from requests import get
 from json import dumps
@@ -55,6 +55,7 @@ class PlsPermission:
 class Static:
     def __init__(self, path):
         self.path = path
+        self.files = listdir(path)
 
     def GET(self, request, response):
         if request.path.endswith('/'):
@@ -64,16 +65,19 @@ class Static:
 
             request.path = '/index.html'
 
-        real_path = join(self.path, request.path[1:])
-        if exists(real_path):
-            response.response = open(real_path, 'r')
-            response.mimetype = from_file(real_path)
+        filename = request.path[1:]
+        if filename not in self.files:
+            return None
 
-            if response.user:
-                response.set_cookie('user', response.user)
-                response.set_cookie('permissions', ', '.join(response.permissions))
+        real_path = join(self.path, filename)
+        response.response = open(real_path, 'r')
+        response.mimetype = from_file(real_path)
 
-            return response
+        if response.user:
+            response.set_cookie('user', response.user)
+            response.set_cookie('permissions', ', '.join(response.permissions))
+
+        return response
 
 class S3Handler:
     def has_access(self, response, path):
