@@ -16,10 +16,6 @@ class ParseQuery:
     def any(self, request, response):
         response.params = url_decode(request.query_string)
 
-class CORS:
-    def any(serlf, request, response):
-        response.headers.set('Access-Control-Allow-Origin', '*')
-
 class ListFiles:
     def GET(self, request, response):
         list_type = response.params.get('list')
@@ -142,7 +138,6 @@ class S3Handler:
 
 middlewarez = [
     ParseQuery(),
-    CORS(),
     ListFiles(),
     AuthToken(),
     PlsPermission(),
