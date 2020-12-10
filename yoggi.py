@@ -13,11 +13,48 @@ from werkzeug.utils import redirect
 
 import s3
 
-LOGIN_URL = getenv('LOGIN_URL', 'https://login.datasektionen.se')
-
 class ParseQuery:
     def any(self, request, response):
         response.params = url_decode(request.query_string)
+
+class Auth:
+    def __init__(self):
+        self.api_url = getenv('LOGIN_URL', 'https://login.datasektionen.se')
+        self.api_key = getenv('LOGIN_API_KEY')
+        self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
+
+    def any(self, request, response):
+        login_url = self.api_url + '/login?callback=' + url_quote(request.base_url) + '?token='
+        token = request.cookies.get('token') or response.params.get('token') or request.form.get('token')
+        if token == None or token == "":
+            return redirect(login_url)
+        response.user = self.validate_user(token)
+        if not response.user:
+            # The token might have been invalidated. Clear cookies.
+            resp = redirect(login_url)
+            resp.set_cookie('token', max_age=0) # max_age=0 unsets the cookie.
+            return resp
+
+        response.set_cookie('token', token, httponly=True, samesite='Lax')
+        return response
+
+    def validate_user(self, token):
+        if not self.validate_token(token):
+            return False
+
+        url      = '{}/verify/{}'.format(self.api_url, token)
+        params   = {'api_key': self.api_key}
+        response = get(url, params=params)
+
+        if response.status_code != 200:
+            return False
+        return response.json()['user']
+
+    def validate_token(self, token):
+        for letter in token:
+            if letter not in self.token_alphabet:
+                return False
+        return True
 
 class ListFiles:
     def GET(self, request, response):
@@ -27,41 +64,13 @@ class ListFiles:
 
             return response
 
-class AuthToken:
-    def __init__(self):
-        self.api_key = getenv('LOGIN_API_KEY')
-        self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
-
-    def any(self, request, response):
-        token = response.params.get('token') or request.form.get('token')
-        response.user = self.validate_user(token)
-
-    def validate_user(self, token):
-        if not self.validate_token(token):
-            return False
-
-        url      = '{}/verify/{}'.format(LOGIN_URL, token)
-        params   = {'api_key': self.api_key}
-        response = get(url, params=params)
-
-        if response.status_code != 200:
-            return False
-        return response.json()['user']
-
-    def validate_token(self, token):
-        if token == None or token == "":
-            return False
-        for letter in token:
-            if letter not in self.token_alphabet:
-                return False
-        return True
-
 class PlsPermission:
     def any(self, request, response):
+        self.pls_url = getenv('PLS_URL', 'https://pls.datasektionen.se')
         response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
-        url = 'https://pls.datasektionen.se/api/user/{}/yoggi/'.format(user)
+        url = self.pls_url + '/api/user/{}/yoggi/'.format(user)
         res = get(url)
 
         return res.json()
@@ -73,10 +82,6 @@ class Static:
 
     def GET(self, request, response):
         if request.path.endswith('/'):
-            if not response.user:
-                url = LOGIN_URL + '/login?callback=' + url_quote(request.base_url) + '?token='
-                return redirect(url)
-
             request.path = '/index.html'
 
         filename = request.path[1:]
@@ -156,8 +161,8 @@ class S3Handler:
 
 middlewarez = [
     ParseQuery(),
+    Auth(),
     ListFiles(),
-    AuthToken(),
     PlsPermission(),
     Static('build'),
     S3Handler()
@@ -181,8 +186,13 @@ def request_handler(request):
         elif request.method in d:
             finished_response = middleware.__getattribute__(request.method)(request, response)
 
-        if finished_response: return finished_response
-        elif finished_response is not None: response = finished_response
+        if finished_response == None:
+            continue
+        elif finished_response.data == b'':
+            response = finished_response
+        else:
+            return finished_response
+
 
 yoggi = ProxyFix(request_handler)
 
