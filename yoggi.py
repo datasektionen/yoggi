@@ -4,6 +4,7 @@ from magic import from_buffer, from_file
 from requests import get
 from json import dumps
 from mimetypes import types_map
+import string
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Request, Response
@@ -11,6 +12,8 @@ from werkzeug.urls import url_decode, url_quote
 from werkzeug.utils import redirect
 
 import s3
+
+LOGIN_URL = getenv('LOGIN_URL', 'https://login.datasektionen.se')
 
 class ParseQuery:
     def any(self, request, response):
@@ -27,20 +30,31 @@ class ListFiles:
 class AuthToken:
     def __init__(self):
         self.api_key = getenv('LOGIN_API_KEY')
+        self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
 
     def any(self, request, response):
         token = response.params.get('token') or request.form.get('token')
         response.user = self.validate_user(token)
 
     def validate_user(self, token):
-        url      = 'https://login.datasektionen.se/verify/{}'.format(token)
-        params   = {'format': 'json', 'api_key': self.api_key}
+        if not self.validate_token(token):
+            return False
+
+        url      = '{}/verify/{}'.format(LOGIN_URL, token)
+        params   = {'api_key': self.api_key}
         response = get(url, params=params)
 
-        if response.status_code == 200:
-            return response.json()['user']
-        else:
+        if response.status_code != 200:
             return False
+        return response.json()['user']
+
+    def validate_token(self, token):
+        if token == None or token == "":
+            return False
+        for letter in token:
+            if letter not in self.token_alphabet:
+                return False
+        return True
 
 class PlsPermission:
     def any(self, request, response):
@@ -60,7 +74,7 @@ class Static:
     def GET(self, request, response):
         if request.path.endswith('/'):
             if not response.user:
-                url = 'https://login.datasektionen.se/login?callback=' + url_quote(request.base_url) + '?token='
+                url = LOGIN_URL + '/login?callback=' + url_quote(request.base_url) + '?token='
                 return redirect(url)
 
             request.path = '/index.html'
