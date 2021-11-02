@@ -1,8 +1,9 @@
+from os import getenv
 import boto3
 
 from urllib.parse import quote
 
-BUCKET = 'dsekt-assets'
+BUCKET = getenv("S3_BUCKET")
 
 client = boto3.client('s3')
 bucket = boto3.resource('s3').Bucket(BUCKET)
@@ -16,7 +17,7 @@ def owner(path):
 
 def list(prefix):
     response = client.list_objects_v2(
-        Bucket='dsekt-assets',
+        Bucket=BUCKET,
         Delimiter='/',
         Prefix=prefix)
 
