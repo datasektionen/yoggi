@@ -66,7 +66,7 @@ function FileItem(props) {
       <ActionDelete />
     </IconButton>
   )
-  const constructShortUrl = (short) => window.location.host + "/" + short;
+  const constructShortUrl = (short) => window.location.origin + "/" + short;
   const copyToClipboard = (short) => {
     const value = constructShortUrl(short);
     // navigator clipboard api needs a secure context (https)
