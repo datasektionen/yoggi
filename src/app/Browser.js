@@ -111,7 +111,7 @@ function FileItem(props) {
 
 
   return (
-    <a href={`/${name}`}> <ListItem
+    <a href={`/${name}`} target="_blank" rel="noopener noreferrer"> <ListItem
       primaryText={name}
       rightIconButton={
         <div>
