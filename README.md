@@ -8,6 +8,7 @@ Yoggi uses AWS S3 to store the files. The frontend is written in React.
 1. Install Python
 1. Run `npm install` (the `postinstall` script will run `npm run build`, which builds frontend)
 1. Configure your environment variables in an `.env`-file, see [Environment variables](#environment-variables)
+1. Change `'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets')` to `'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets-dev')` in [webpack-production.config.js](/webpack-production.config.js), if you are running `npm run build` to test locally
 1. Run `pipenv install`
 1. Run `pipenv shell` which loads environment variables and some other magic
 1. Run python yoggi.py
@@ -27,6 +28,28 @@ To get a login key, or access to the `dsekt-assets-dev`-bucket, ask Systemansvar
 | S3_BUCKET                      | Name of S3 bucket. When running locally, use `dsekt-assets-dev` | --- |
 | AWS_ACCESS_KEY_ID              | AWS IAM access key id           | ---                              |
 | AWS_SECRET_ACCESS_KEY          | AWS IAM secret access key       | ---                              |
+
+# Configuring the S3 bucket
+
+Objects can be set as publicly accessible by adding the tag key-value-pair "public": "True" to the object. For this to work, the bucket needs to be configured with the following JSON (Bucket policy):
+```JSON
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::dsekt-assets/*",
+            "Condition": {
+                "StringEquals": {
+                    "s3:ExistingObjectTag/public": "True"
+                }
+            }
+        }
+    ]
+}
+```
 
 # Protip
 To allow larger file uploads, set the max size of file uploads to for example 100 MB.
