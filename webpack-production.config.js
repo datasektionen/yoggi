@@ -17,7 +17,9 @@ const config = {
     // Define production build to allow React to strip out unnecessary checks
     new webpack.DefinePlugin({
       'process.env':{
-        'NODE_ENV': JSON.stringify('production')
+        'NODE_ENV': JSON.stringify('production'),
+        // Change this when developing locally to dsekt-assets-dev
+        'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets'),
       }
     }),
     // Minify the bundle

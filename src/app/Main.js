@@ -45,6 +45,7 @@ class Main extends Component {
       body: false,
       response: false,
       token: location.search.substr(1).split("=")[1],
+      isPublic: false,
       ...cookie.parse(document.cookie)
     }
 
@@ -53,6 +54,13 @@ class Main extends Component {
     }
   }
 
+  setPublic = (state) => {
+    this.setState({
+      isPublic: state
+    })
+  }
+
+  
   uploadClose = () => {
     this.setState({
       open: false,
@@ -60,25 +68,39 @@ class Main extends Component {
       fileName: false,
     })
   }
-
+  
   uploadClick = () => {
     this.setState({
       open: true,
     })
   }
 
+  doSetPublicTag = (name, state) => {
+    const { folder } = this.state
+    fetch(`${name}?public=${state === true ? "False" : "True"}`, {
+      method: "PUT",
+    })
+    .then(response => response.text())
+    .then(text => {
+      this.setState({ response: text })
+      console.log(text)
+      this.list(folder)
+    })
+  }
+  
   doUpload = () => {
-    const {file, folder, body} = this.state
+    const { file, folder, body, isPublic } = this.state
     if(file) {
-      fetch(file, {
+      fetch(`${file}?public=${isPublic ? "True" : "False"}`, {
           method: 'POST',
           body: body,
-        }).then(response => response.text())
-          .then(text => {
-            this.setState({response: text, open: false, filename: false})
-            console.log(text)
-            this.list(folder)
-          })
+        })
+        .then(response => response.text())
+        .then(text => {
+          this.setState({response: text, open: false, filename: false})
+          console.log(text)
+          this.list(folder)
+        })
     }
   }
 
@@ -138,7 +160,7 @@ class Main extends Component {
   }
 
   render() {
-    const {files, folders, folder, token} = this.state
+    const {files, folders, folder, token, tags} = this.state
     return (
       <MuiThemeProvider muiTheme={muiTheme}>
         <div>
@@ -166,15 +188,19 @@ class Main extends Component {
               doUpload={this.doUpload}
               fileChange={this.fileChange}
               textChange={this.textChange}
+              setPublic={this.setPublic}
+              isPublic={this.state.isPublic}
             />
 
             <Browser
               files={files.filter(file => `/${file}` != folder)}
+              tags={tags}
               folders={folders}
               folder={folder}
               token={token}
               changeFolder={this.changeFolder}
               onDelete={this.onDelete}
+              onPublicSet={this.doSetPublicTag}
             />
 
           </div>
@@ -192,7 +218,7 @@ class Main extends Component {
 
 function Upload(props) {
   const {open, filename, permissions} = props
-  const {uploadClose, doUpload, fileChange, textChange} = props
+  const {uploadClose, doUpload, fileChange, textChange, setPublic, isPublic} = props
   return (<Dialog
     open={open}
     title="Upload a file"
@@ -224,12 +250,22 @@ function Upload(props) {
     <RaisedButton
       fullWidth={true}
       containerElement='label'
-      label={filename || 'Select file'}>
-        <input
-          type="file"
-          style={{display: 'none'}}
-          onChange={fileChange}
-        />
+      label={filename || 'Select file'}
+    >
+      <input
+        type="file"
+        style={{display: 'none'}}
+        onChange={fileChange}
+      />
+    </RaisedButton>
+    <RaisedButton
+      fullWidth={true}
+      primary={isPublic}
+      containerElement='label'
+      label={'Ladda upp som publik: ' + (isPublic ? "Ja" : "Nej")}
+      onClick={() => setPublic(isPublic === true ? false : true)}
+      title="Publika filer kan nås av vem som helst på internet"
+    >
     </RaisedButton>
   </Dialog>)
 }
