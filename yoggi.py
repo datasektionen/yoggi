@@ -136,7 +136,9 @@ class S3Handler:
 
             mimetype = from_buffer(file.stream.read(1024), mime=True)
 
-            s3.put(path, file, response.user, mimetype)
+            public = response.params.get('public') or "False"
+
+            s3.put(path, file, response.user, mimetype, public)
 
             response.data = 'That probably worked...'
 
@@ -145,6 +147,27 @@ class S3Handler:
             response.status_code = 401
 
         return response
+
+    def PUT(self, request, response):
+        path = request.path[1:]
+        state = response.params.get('public')
+
+        if state != "True" and state != "False":
+            response.data = 'Invalid mapping for "public". Should be "?public=True" or "?public=False"'
+            response.status_code = 400
+            return response
+
+        if self.has_access(response, path):
+
+            s3.putPermissions(path, state)
+            response.data = 'That probably worked...'
+
+        else:
+            response.data = 'Permission denied in this folder.'
+            response.status_code = 401
+
+        return response
+
 
     def DELETE(self, request, response):
         path = request.path[1:]
@@ -168,7 +191,7 @@ middlewarez = [
     S3Handler()
 ]
 
-supported_methods = set(["GET", "POST", "DELETE"])
+supported_methods = set(["GET", "PUT", "POST", "DELETE"])
 
 @Request.application
 def request_handler(request):
