@@ -83,7 +83,6 @@ class Main extends Component {
     .then(response => response.text())
     .then(text => {
       this.setState({ response: text })
-      console.log(text)
       this.list(folder)
     })
   }
@@ -98,7 +97,6 @@ class Main extends Component {
         .then(response => response.text())
         .then(text => {
           this.setState({response: text, open: false, filename: false})
-          console.log(text)
           this.list(folder)
         })
     }
@@ -107,7 +105,6 @@ class Main extends Component {
   onDelete = res => {
     res.text().then(text => {
       this.setState({response: text})
-      console.log(text)
       this.list(this.state.folder)
     })
   }
