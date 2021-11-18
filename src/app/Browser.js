@@ -68,7 +68,7 @@ function FileItem(props) {
       style={{ boxShadow: 'none' }}
       hoveredStyle={{ boxShadow: 'none' }}
       onClick={deleteFile}>
-      <ActionDelete hoverColor="#ff5722" />
+      <ActionDelete hoverColor={deepOrange500} />
     </IconButton>
   )
   const constructShortUrl = (short) => window.location.origin + "/" + short;
@@ -108,7 +108,7 @@ function FileItem(props) {
         e.stopPropagation()
         copyToClipboard(name)
       }}>
-      <LinkIcon hoverColor="#ff5722" />
+      <LinkIcon hoverColor={deepOrange500} />
     </IconButton>
   )
 
@@ -129,9 +129,9 @@ function FileItem(props) {
       }}
     >
       {isPublic ?
-        <LockOpen hoverColor="#ff5722" />
+        <LockOpen hoverColor={deepOrange500} />
         :
-        <LockClosed hoverColor="#ff5722" />
+        <LockClosed hoverColor={deepOrange500} />
       }
     </IconButton>
   )
