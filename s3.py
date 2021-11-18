@@ -69,7 +69,7 @@ def put(path, file, owner, mimetype, public):
         Tagging="public=" + str(public)
     )
 
-def putPermissions(path, public):
+def put_permissions(path, public):
     if not exists(path):
         return False
     

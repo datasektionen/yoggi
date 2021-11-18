@@ -159,7 +159,7 @@ class S3Handler:
 
         if self.has_access(response, path):
 
-            s3.putPermissions(path, state)
+            s3.put_permissions(path, state)
             response.data = 'That probably worked...'
 
         else:
