@@ -114,8 +114,7 @@ function FileItem(props) {
 
   
   const isPublic = tags
-                  .filter(t => t["Key"] === "public")
-                  .map(t => t["Value"])[0]
+                  .filter(t => t["Key"] === "public")[0]["Value"]
                   .toLowerCase() === "true"
   
   const AccessibleIcon = (

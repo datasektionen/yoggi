@@ -260,7 +260,7 @@ function Upload(props) {
       primary={isPublic}
       containerElement='label'
       label={'Ladda upp som publik: ' + (isPublic ? "Ja" : "Nej")}
-      onClick={() => setPublic(isPublic === true ? false : true)}
+      onClick={() => setPublic(!isPublic)}
       title="Publika filer kan nås av vem som helst på internet"
     >
     </RaisedButton>
