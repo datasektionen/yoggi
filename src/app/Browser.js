@@ -12,10 +12,12 @@ import Divider from 'material-ui/Divider';
 
 import IconButton from 'material-ui/IconButton'
 import ActionDelete from 'material-ui/svg-icons/action/delete'
-import FontIcon from 'material-ui/FontIcon';
+import LockClosed from 'material-ui/svg-icons/action/lock';
+import LockOpen from 'material-ui/svg-icons/action/lock-open';
+import LinkIcon from 'material-ui/svg-icons/editor/insert-link';
 
 function Browser(props) {
-  const { folder, files, folders, token, changeFolder, onDelete } = props
+  const { folder, files, folders, token, changeFolder, onDelete, tags, onPublicSet } = props
 
   return (<div>
     <Subheader>{folder}</Subheader>
@@ -34,6 +36,8 @@ function Browser(props) {
         name={file}
         token={token}
         onDelete={onDelete}
+        tags={tags[file]}
+        onPublicSet={onPublicSet}
       />)}
     </List>
   </div>)
@@ -50,7 +54,7 @@ function FolderItem(props) {
 }
 
 function FileItem(props) {
-  const { name, onDelete } = props
+  const { name, onDelete, tags, onPublicSet } = props
 
   const deleteFile = e => {
     e.preventDefault()
@@ -60,10 +64,11 @@ function FileItem(props) {
 
   const deleteButton = (
     <IconButton
+      title="Radera"
       style={{ boxShadow: 'none' }}
       hoveredStyle={{ boxShadow: 'none' }}
       onClick={deleteFile}>
-      <ActionDelete />
+      <ActionDelete hoverColor={deepOrange500} />
     </IconButton>
   )
   const constructShortUrl = (short) => window.location.origin + "/" + short;
@@ -95,6 +100,7 @@ function FileItem(props) {
 
   const copyButton = (
     <IconButton
+      title="Kopiera länk"
       style={{ boxShadow: 'none' }}
       hoveredStyle={{ boxShadow: 'none' }}
       onClick={(e) => {
@@ -102,23 +108,45 @@ function FileItem(props) {
         e.stopPropagation()
         copyToClipboard(name)
       }}>
-      <FontIcon
-        className="fas fa-link fa-xs"
-      >
-      </FontIcon>
+      <LinkIcon hoverColor={deepOrange500} />
     </IconButton>
   )
 
+  
+  const isPublic = tags
+                  .filter(t => t["Key"] === "public")[0]["Value"]
+                  .toLowerCase() === "true"
+  
+  const AccessibleIcon = (
+    <IconButton
+      style={{ boxShadow: 'none' }}
+      hoveredStyle={{ boxShadow: 'none' }}
+      title={isPublic ? "Öppen för alla på internet" : "Ej öppen för alla på internet, åtkomst via yoggi krävs."}
+      onClick={e => {
+        e.preventDefault()
+        e.stopPropagation()
+        onPublicSet(name, isPublic)
+      }}
+    >
+      {isPublic ?
+        <LockOpen hoverColor={deepOrange500} />
+        :
+        <LockClosed hoverColor={deepOrange500} />
+      }
+    </IconButton>
+  )
 
   return (
-    <a href={`/${name}`}> <ListItem
-      primaryText={name}
-      rightIconButton={
-        <div>
-          {copyButton}
-          {deleteButton}
-        </div>}
-    />
+    <a href={isPublic ? `https://${process.env.REACT_APP_BUCKET_NAME}.s3.amazonaws.com/${name}` : `/${name}`} target="_blank" rel="noopener noreferrer">
+      <ListItem
+        primaryText={name}
+        rightIconButton={
+          <div>
+            {copyButton}
+            {AccessibleIcon}
+            {deleteButton}
+          </div>}
+      />
     </a>
   )
 }

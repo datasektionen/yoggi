@@ -24,7 +24,17 @@ def list(prefix):
     files = [x['Key'] for x in response['Contents']] if 'Contents' in response else []
     folders = [x['Prefix'] for x in response['CommonPrefixes']] if 'CommonPrefixes' in response else []
 
-    return {'files': files, 'folders': folders}
+    # Apparently you can't get tags from list_objects...
+    tags = {}
+    for f in files:
+        file_tags = client.get_object_tagging(
+            Bucket=BUCKET,
+            Key=f
+        )
+
+        tags[f] = file_tags["TagSet"] or [{'Key': 'public', 'Value': 'False'}]
+
+    return {'files': files, 'folders': folders, 'tags': tags}
 
 
 def get(path):
@@ -42,7 +52,7 @@ def get_url(path):
             ExpiresIn=60*60*24*365)
 
 
-def put(path, file, owner, mimetype):
+def put(path, file, owner, mimetype, public):
     if exists(path):
         return False
 
@@ -55,9 +65,26 @@ def put(path, file, owner, mimetype):
         Metadata={
             'owner': owner,
             'filename': quote(file.filename)
-        }
+        },
+        Tagging="public=" + str(public)
     )
 
+def put_permissions(path, public):
+    if not exists(path):
+        return False
+    
+    return client.put_object_tagging(
+        Bucket=BUCKET,
+        Key=path,
+        Tagging={
+            'TagSet': [
+                {
+                    'Key': 'public',
+                    'Value': str(public)
+                }
+            ]
+        }
+    )
 
 def delete(path):
     if not exists(path):

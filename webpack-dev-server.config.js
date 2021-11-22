@@ -28,6 +28,11 @@ const config = {
   plugins: [
     // Enables Hot Modules Replacement
     new webpack.HotModuleReplacementPlugin(),
+    new webpack.DefinePlugin({
+      'process.env':{
+        'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets-dev'),
+      }
+    }),
     // Allows error warnings but does not stop compiling.
     new webpack.NoErrorsPlugin(),
     // Moves files
