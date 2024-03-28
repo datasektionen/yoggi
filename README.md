@@ -17,7 +17,7 @@ At this time, I don't know how to make the hot-reloading of React work. You simp
 
 # Environment variables
 
-To get a login key, or access to the `dsekt-assets-dev`-bucket, ask Systemansvarig: [d-sys@d.kth.se](mailto:dsys@d.kth.se)
+When running locally, you can run [nyckeln under dörrmattan](https://github.com/datasektionen/nyckeln-under-dorrmattan) instead of the production login system. If you need access to the `dsekt-assets-dev` bucket, you can ask Systemansvarig: [d-sys@datasektionen.se](mailto:d-sys@datasektionen.se), but setting up an own bucket may be a better choice.
 
 | Name                           | Description                     | Default                          |
 | ------------------------------ | ------------------------------- | -------------------------------- |
