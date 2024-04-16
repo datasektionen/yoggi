@@ -89,7 +89,7 @@ class Static:
             return None
 
         real_path = join(self.path, filename)
-        response.response = open(real_path, 'r')
+        response.response = open(real_path, 'rb')
         response.mimetype = from_file(real_path)
 
         if response.user:
