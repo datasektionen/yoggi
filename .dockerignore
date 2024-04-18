@@ -1,0 +1,9 @@
+node_modules
+*.pyc
+env*
+build
+.env
+__pycache__
+Dockerfile
+README.md
+compose.yml
