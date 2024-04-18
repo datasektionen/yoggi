@@ -1,15 +1,14 @@
 {
-  "name": "material-ui-example-webpack",
-  "version": "0.16.4",
-  "description": "Sample project that uses Material-UI",
+  "name": "yoggi",
+  "version": "1.0.0",
+  "description": "Yoggi, som i yoghurt, som i fil, som i statiska filer. Bra jobbat Mauritz",
   "repository": {
     "type": "git",
     "url": "https://github.com/callemall/material-ui.git"
   },
   "scripts": {
     "start": "webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors",
-    "build": "webpack --config webpack-production.config.js --progress --colors",
-    "postinstall": "npm run build"
+    "build": "webpack --config webpack-production.config.js --progress --colors"
   },
   "private": true,
   "devDependencies": {
