@@ -15,12 +15,13 @@ import s3
 
 class Auth:
     def __init__(self):
-        self.api_url = getenv('LOGIN_URL', 'https://login.datasektionen.se')
+        self.login_frontend_url = getenv('LOGIN_FRONTEND_URL', 'https://logout.datasektionen.se/legacyapi')
+        self.login_api_url = getenv('LOGIN_API_URL', 'https://logout.datasektionen.se/legacyapi')
         self.api_key = getenv('LOGIN_API_KEY')
         self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
 
     def any(self, request, response):
-        login_url = self.api_url + '/login?' + urlencode({'callback': request.base_url + '?token='})
+        login_url = self.login_frontend_url + '/login?' + urlencode({'callback': request.base_url + '?token='})
         token = request.cookies.get('token') or request.args.get('token') or request.form.get('token')
         if token == None or token == "":
             return redirect(login_url)
@@ -38,7 +39,7 @@ class Auth:
         if not self.validate_token(token):
             return False
 
-        url      = '{}/verify/{}'.format(self.api_url, token)
+        url      = '{}/verify/{}'.format(self.login_api_url, token)
         params   = {'api_key': self.api_key}
         response = get(url, params=params)
 

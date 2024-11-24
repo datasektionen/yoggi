@@ -19,15 +19,16 @@ At this time, I don't know how to make the hot-reloading of React work. You simp
 
 When running locally, you can run [nyckeln under dörrmattan](https://github.com/datasektionen/nyckeln-under-dorrmattan) instead of the production login system. If you need access to the `dsekt-assets-dev` bucket, you can ask Systemansvarig: [d-sys@datasektionen.se](mailto:d-sys@datasektionen.se), but setting up an own bucket may be a better choice.
 
-| Name                           | Description                     | Default                          |
-| ------------------------------ | ------------------------------- | -------------------------------- |
-| LOGIN_URL                      | URL to login server             | https://login.datasektionen.se   |
-| LOGIN_API_KEY                  | API key for KTH authentication  | ---                              |
-| PLS_URL                        | URL to pls server               | https://pls.datasektionen.se     |
-| PORT                           | Port to serve backend on        | 5000                             |
-| S3_BUCKET                      | Name of S3 bucket. When running locally, use `dsekt-assets-dev` | --- |
-| AWS_ACCESS_KEY_ID              | AWS IAM access key id           | ---                              |
-| AWS_SECRET_ACCESS_KEY          | AWS IAM secret access key       | ---                              |
+| Name                           | Description                     | Default                                   |
+| ------------------------------ | ------------------------------- | ----------------------------------------- |
+| LOGIN_FRONTEND_URL             | URL to login from frontend      | https://logout.datasektionen.se/legacyapi |
+| LOGIN_API_URL                  | URL to login from backend       | https://logout.datasektionen.se/legacyapi |
+| LOGIN_API_KEY                  | API key for KTH authentication  | ---                                       |
+| PLS_URL                        | URL to pls server               | https://pls.datasektionen.se              |
+| PORT                           | Port to serve backend on        | 5000                                      |
+| S3_BUCKET                      | Name of S3 bucket. When running locally, use `dsekt-assets-dev` | ---       |
+| AWS_ACCESS_KEY_ID              | AWS IAM access key id           | ---                                       |
+| AWS_SECRET_ACCESS_KEY          | AWS IAM secret access key       | ---                                       |
 
 # Configuring the S3 bucket
 
