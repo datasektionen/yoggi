@@ -5,17 +5,13 @@ from requests import get
 from json import dumps
 from mimetypes import types_map
 import string
+from urllib.parse import urlencode
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Request, Response
-from werkzeug.urls import url_decode, url_quote
 from werkzeug.utils import redirect
 
 import s3
-
-class ParseQuery:
-    def any(self, request, response):
-        response.params = url_decode(request.query_string)
 
 class Auth:
     def __init__(self):
@@ -24,8 +20,8 @@ class Auth:
         self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
 
     def any(self, request, response):
-        login_url = self.api_url + '/login?callback=' + url_quote(request.base_url) + '?token='
-        token = request.cookies.get('token') or response.params.get('token') or request.form.get('token')
+        login_url = self.api_url + '/login?' + urlencode({'callback': request.base_url + '?token='})
+        token = request.cookies.get('token') or request.args.get('token') or request.form.get('token')
         if token == None or token == "":
             return redirect(login_url)
         response.user = self.validate_user(token)
@@ -58,7 +54,7 @@ class Auth:
 
 class ListFiles:
     def GET(self, request, response):
-        list_type = response.params.get('list')
+        list_type = request.args.get('list')
         if not list_type is None:
             response.data = dumps(s3.list(request.path[1:]))
 
@@ -136,7 +132,7 @@ class S3Handler:
 
             mimetype = from_buffer(file.stream.read(1024), mime=True)
 
-            public = response.params.get('public') or "False"
+            public = request.args.get('public') or "False"
 
             s3.put(path, file, response.user, mimetype, public)
 
@@ -150,7 +146,7 @@ class S3Handler:
 
     def PUT(self, request, response):
         path = request.path[1:]
-        state = response.params.get('public')
+        state = request.args.get('public')
 
         if state != "True" and state != "False":
             response.data = 'Invalid mapping for "public". Should be "?public=True" or "?public=False"'
@@ -183,7 +179,6 @@ class S3Handler:
         return response
 
 middlewarez = [
-    ParseQuery(),
     Auth(),
     ListFiles(),
     PlsPermission(),
