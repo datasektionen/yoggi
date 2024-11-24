@@ -6,7 +6,7 @@ Yoggi uses AWS S3 to store the files. The frontend is written in React.
 
 # How to run
 1. Install Python
-1. Run `npm install` (the `postinstall` script will run `npm run build`, which builds frontend)
+1. Run `npm install` and `npm run build` (builds the frontend)
 1. Configure your environment variables in an `.env`-file, see [Environment variables](#environment-variables)
 1. Change `'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets')` to `'REACT_APP_BUCKET_NAME': JSON.stringify('dsekt-assets-dev')` in [webpack-production.config.js](/webpack-production.config.js), if you are running `npm run build` to test locally
 1. Run `pipenv install`
