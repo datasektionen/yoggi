@@ -3,9 +3,7 @@ job "yoggi" {
 
   group "yoggi" {
     network {
-      port "http" {
-        to = 5000
-      }
+      port "http" { }
     }
 
     service {
@@ -38,6 +36,7 @@ S3_BUCKET=dsekt-assets
 LOGIN_FRONTEND_URL=https://logout.datasektionen.se/legacyapi
 LOGIN_API_URL=http://logout.nomad.dsekt.internal/legacyapi
 PLS_URL=http://pls.nomad.dsekt.internal
+PORT={{ env "NOMAD_PORT_http" }}
 ENV
         destination = "local/.env"
         env         = true
