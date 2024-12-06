@@ -33,8 +33,8 @@ LOGIN_API_KEY={{ .login_api_key }}
 {{ end }}
 AWS_ACCESS_KEY_ID=AKIATUCF4UAO4XR3L5W4
 S3_BUCKET=dsekt-assets
-LOGIN_FRONTEND_URL=https://logout.datasektionen.se/legacyapi
-LOGIN_API_URL=http://logout.nomad.dsekt.internal/legacyapi
+LOGIN_FRONTEND_URL=https://sso.datasektionen.se/legacyapi
+LOGIN_API_URL=http://sso.nomad.dsekt.internal/legacyapi
 PLS_URL=http://pls.nomad.dsekt.internal
 PORT={{ env "NOMAD_PORT_http" }}
 ENV

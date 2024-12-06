@@ -21,8 +21,8 @@ When running locally, you can run [nyckeln under dörrmattan](https://github.com
 
 | Name                           | Description                     | Default                                   |
 | ------------------------------ | ------------------------------- | ----------------------------------------- |
-| LOGIN_FRONTEND_URL             | URL to login from frontend      | https://logout.datasektionen.se/legacyapi |
-| LOGIN_API_URL                  | URL to login from backend       | https://logout.datasektionen.se/legacyapi |
+| LOGIN_FRONTEND_URL             | URL to login from frontend      | https://sso.datasektionen.se/legacyapi    |
+| LOGIN_API_URL                  | URL to login from backend       | https://sso.datasektionen.se/legacyapi    |
 | LOGIN_API_KEY                  | API key for KTH authentication  | ---                                       |
 | PLS_URL                        | URL to pls server               | https://pls.datasektionen.se              |
 | PORT                           | Port to serve backend on        | 5000                                      |

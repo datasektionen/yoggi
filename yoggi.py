@@ -15,8 +15,8 @@ import s3
 
 class Auth:
     def __init__(self):
-        self.login_frontend_url = getenv('LOGIN_FRONTEND_URL', 'https://logout.datasektionen.se/legacyapi')
-        self.login_api_url = getenv('LOGIN_API_URL', 'https://logout.datasektionen.se/legacyapi')
+        self.login_frontend_url = getenv('LOGIN_FRONTEND_URL', 'https://sso.datasektionen.se/legacyapi')
+        self.login_api_url = getenv('LOGIN_API_URL', 'https://sso.datasektionen.se/legacyapi')
         self.api_key = getenv('LOGIN_API_KEY')
         self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
 
