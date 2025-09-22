@@ -64,11 +64,13 @@ class ListFiles:
 class HivePermission:
     def any(self, request, response):
         self.hive_url = getenv('HIVE_URL', 'https://hive.datasektionen.se/api/v1')
+        self.hive_api_key = getenv('HIVE_API_KEY')
         response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
         url = self.hive_url + '/user/{}/permissions'.format(user)
-        res = get(url)
+        headers = {"Authorization": "Bearer" + self.hive_api_key}
+        res = get(url, headers=headers)
 
         permissions = []
         for perm in res:
