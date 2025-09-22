@@ -73,7 +73,7 @@ class HivePermission:
         res = get(url, headers=headers)
 
         permissions = []
-        for perm in res:
+        for perm in res.json():
             if perm['id'] == 'access':
                 permissions.append(perm['scope'])
 
