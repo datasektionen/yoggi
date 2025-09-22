@@ -61,16 +61,20 @@ class ListFiles:
 
             return response
 
-class PlsPermission:
+class HivePermission:
     def any(self, request, response):
-        self.pls_url = getenv('PLS_URL', 'https://pls.datasektionen.se')
+        self.hive_url = getenv('HIVE_URL', 'https://hive.datasektionen.se/api/v1')
         response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
-        url = self.pls_url + '/api/user/{}/yoggi/'.format(user)
+        def get_scopes(permission):
+            return permission.scope
+
+        url = self.hive_url + '/user/{}/permissions'.format(user)
         res = get(url)
 
-        return res.json()
+        return map(get_scopes, res.json())
+
 
 class Static:
     def __init__(self, path):
@@ -182,7 +186,7 @@ class S3Handler:
 middlewarez = [
     Auth(),
     ListFiles(),
-    PlsPermission(),
+    HivePermission(),
     Static('build'),
     S3Handler()
 ]

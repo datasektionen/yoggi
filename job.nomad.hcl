@@ -30,12 +30,13 @@ job "yoggi" {
 {{ with nomadVar "nomad/jobs/yoggi" }}
 AWS_SECRET_ACCESS_KEY={{ .aws_secret_access_key }}
 LOGIN_API_KEY={{ .login_api_key }}
+HIVE_API_KEY={{ .hive_api_key }}
 {{ end }}
 AWS_ACCESS_KEY_ID=AKIATUCF4UAO4XR3L5W4
 S3_BUCKET=dsekt-assets
 LOGIN_FRONTEND_URL=https://sso.datasektionen.se/legacyapi
 LOGIN_API_URL=http://sso.nomad.dsekt.internal/legacyapi
-PLS_URL=http://pls.nomad.dsekt.internal
+HIVE_URL=http://hive.nomad.dsekt.internal/api/v1
 PORT={{ env "NOMAD_PORT_http" }}
 ENV
         destination = "local/.env"
