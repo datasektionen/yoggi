@@ -67,13 +67,15 @@ class HivePermission:
         response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
-        def get_scopes(permission):
-            return permission.scope
-
         url = self.hive_url + '/user/{}/permissions'.format(user)
         res = get(url)
 
-        return map(get_scopes, res.json())
+        permissions = []
+        for perm in res:
+            if perm['id'] == 'access':
+                permissions.append(perm['scope'])
+
+        return permissions
 
 
 class Static:
