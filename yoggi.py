@@ -69,8 +69,12 @@ class HivePermission:
 
     def has_permission(self, user):
         url = self.hive_url + '/user/{}/permissions'.format(user)
-        headers = {"Authorization": "Bearer" + self.hive_api_key}
+        headers = {"Authorization": "Bearer " + self.hive_api_key}
         res = get(url, headers=headers)
+
+        if res.status_code != 200:
+            print(res.text)
+            return False
 
         permissions = []
         for perm in res.json():
