@@ -1,0 +1,48 @@
+services:
+  yoggi:
+    build: .
+    ports:
+      - 8000:8000
+    environment:
+      - HIVE_URL=http://nyckeln:7004/api/v1
+      - HIVE_API_KEY=aaaa
+      - LOGIN_FRONTEND_URL=http://localhost:7002
+      - LOGIN_API_URL=http://nyckeln:7002
+      - PORT=8000
+      - S3_BUCKET=dsekt-assets
+      - AWS_SECRET_ACCESS_KEY=aaaa
+      - AWS_ACCESS_KEY_ID=aaaa
+  nyckeln:
+    image: ghcr.io/datasektionen/nyckeln-under-dorrmattan:latest
+    configs:
+      - source: nyckeln.yaml
+        target: /config.yaml
+    ports:
+      - 7001:7001
+      - 7002:7002
+      - 7003:7003
+      - 7004:7004
+
+configs:
+  nyckeln.yaml:
+    content: |
+      users:
+        - ug_kth_id: some-id
+          kth_id: turetek
+          email: turetek@kth.se
+          first_name: Ture
+          family_name: Teknolog
+          hive_tags:
+            - id: personal_email
+              content: turetek@gmail.com
+
+      hive:
+        groups:
+          - name: Systemansvarig
+            id: d-sys
+            domain: example.com
+            members:
+              - turetek
+            permissions:
+              - id: access
+                scope: '*'
