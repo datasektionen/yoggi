@@ -4,3 +4,4 @@ env*
 build
 .env
 __pycache__
+/.vscode
