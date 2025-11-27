@@ -1,3 +1,4 @@
+from typing import *;
 from os import getenv, listdir
 from os.path import join
 from magic import from_buffer, from_file
@@ -64,7 +65,7 @@ class ListFiles:
 class HivePermission:
     def any(self, request, response):
         self.hive_url = getenv('HIVE_URL', 'https://hive.datasektionen.se/api/v1')
-        self.hive_api_key = getenv('HIVE_API_KEY')
+        self.hive_api_key = cast(str, getenv('HIVE_API_KEY'))
         response.permissions = self.has_permission(response.user)
 
     def has_permission(self, user):
@@ -212,22 +213,28 @@ def request_handler(request):
 
     for middleware in middlewarez:
         d = dir(middleware)
-        if 'any' in d:
+        if isinstance(middleware, (Auth, HivePermission)):
             finished_response = middleware.any(request, response)
         elif request.method in d:
             finished_response = middleware.__getattribute__(request.method)(request, response)
-
+        else:
+            # This branch didn't exist before, but the variable could be unset
+            # in the type system without it. Anyway, this behaviour should be
+            # fair fallback.
+            finished_response = None
+        
         if finished_response == None:
             continue
         elif finished_response.data == b'':
             response = finished_response
         else:
             return finished_response
-
+    
+    raise Exception("No middleware could generate response")
 
 yoggi = ProxyFix(request_handler)
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
 
-    run_simple('localhost', getenv('PORT') or 5000, request_handler, use_debugger=True, use_reloader=True)
+    run_simple('localhost', int(getenv('PORT') or 5000), request_handler, use_debugger=True, use_reloader=True)

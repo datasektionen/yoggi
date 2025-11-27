@@ -15,6 +15,8 @@ Yoggi uses AWS S3 to store the files. The frontend is written in React.
 
 At this time, I don't know how to make the hot-reloading of React work. You simply have to run `npm run build` to make it work with the backend.
 
+Tip: If your running your editor with the virtual environment you can instead run `pipenv install --dev` to also installs some type stubs.
+
 # Environment variables
 
 When running locally, you can run [nyckeln under dörrmattan](https://github.com/datasektionen/nyckeln-under-dorrmattan) instead of the production login system. If you need access to the `dsekt-assets-dev` bucket, you can ask Systemansvarig: [d-sys@datasektionen.se](mailto:d-sys@datasektionen.se), but setting up an own bucket may be a better choice.
