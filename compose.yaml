@@ -1,17 +1,24 @@
 services:
   yoggi:
-    build: .
+    build: 
+      dockerfile: ./Dockerfile.dev
     ports:
       - 8000:8000
     environment:
-      - HIVE_URL=http://nyckeln:7004/api/v1
-      - HIVE_API_KEY=aaaa
-      - LOGIN_FRONTEND_URL=http://localhost:7002
-      - LOGIN_API_URL=http://nyckeln:7002
+      - OIDC_PROVIDER=http://nyckeln:7003
+      - OIDC_ID=client-id-hi
+      - OIDC_SECRET=client-secret-hi
+      - REDIRECT_URL=http://localhost:8000
+      - JWT_SECRET=jwt-secret
       - PORT=8000
       - S3_BUCKET=dsekt-assets
       - AWS_SECRET_ACCESS_KEY=aaaa
       - AWS_ACCESS_KEY_ID=aaaa
+      # Makes python prints appear properly in the container logs.
+      - PYTHONUNBUFFERED=TRUE
+    configs:
+      - source: nginx.conf
+        target: /etc/nginx/nginx.conf
   nyckeln:
     image: ghcr.io/datasektionen/nyckeln-under-dorrmattan:latest
     configs:
@@ -24,8 +31,30 @@ services:
       - 7004:7004
 
 configs:
+  nginx.conf:
+    content: | 
+      events {}
+
+      http {
+        server {
+          listen 7003;
+
+          location / {
+            proxy_pass http://nyckeln:7003;
+          }
+        }
+      }
+
   nyckeln.yaml:
     content: |
+      clients:
+        - id: "client-id-hi" # use this in your oidc client
+          secret: "client-secret-hi" # use this in your oidc client
+          redirect_uris: # URIs of your oidc client
+            [
+              http://localhost:8000,
+            ]
+
       users:
         - ug_kth_id: some-id
           kth_id: turetek
