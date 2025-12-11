@@ -3,94 +3,152 @@ from os import getenv, listdir
 from os.path import join
 from magic import from_buffer, from_file
 from requests import get
-from json import dumps
-from mimetypes import types_map
-import string
-from urllib.parse import urlencode
+import json
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.wrappers import Request, Response
 from werkzeug.utils import redirect
 
+from authlib.oidc.core import CodeIDToken
+from authlib.integrations.requests_client import OAuth2Session
+from authlib.integrations.base_client.errors import OAuthError, MismatchingStateError
+from authlib.oidc.discovery.models import OpenIDProviderMetadata
+from authlib import jose
+
+import jwt
+
 import s3
+
+def _get_env_var(var: str) -> str:
+    value = getenv(var)
+    if value is None:
+        raise Exception(f"Env var '{var}' must be set")
+    return value
+
+class Settings:
+    OIDC_ID = _get_env_var("OIDC_ID")
+    OIDC_SECRET = _get_env_var("OIDC_SECRET")
+    OIDC_PROVIDER = _get_env_var("OIDC_PROVIDER")
+    REDIRECT_URL = _get_env_var("REDIRECT_URL")
+    JWT_SECRET = _get_env_var("JWT_SECRET")
+
+class AuthToken(TypedDict, total=True):
+    """
+    Contains the auth information of a logged in user.
+    """
+    
+    kth_id: str
+    permissions: list[str]
+    """
+    The Hive scopes this user has access to.
+    """
 
 class Auth:
     def __init__(self):
-        self.login_frontend_url = getenv('LOGIN_FRONTEND_URL', 'https://sso.datasektionen.se/legacyapi')
-        self.login_api_url = getenv('LOGIN_API_URL', 'https://sso.datasektionen.se/legacyapi')
-        self.api_key = getenv('LOGIN_API_KEY')
-        self.token_alphabet = set(string.ascii_letters + string.digits + "-_")
+        response = get(f"{Settings.OIDC_PROVIDER}/.well-known/openid-configuration")
+        self.metadata = OpenIDProviderMetadata(response.json())
+        self.metadata.validate()
+        
+        response = get(cast(str, self.metadata["jwks_uri"]))
+        self.jwk_keys = jose.JsonWebKey.import_key_set(response.json())
 
-    def any(self, request, response):
-        login_url = self.login_frontend_url + '/login?' + urlencode({'callback': request.base_url + '?token='})
-        token = request.cookies.get('token') or request.args.get('token') or request.form.get('token')
-        if token == None or token == "":
-            return redirect(login_url)
-        response.user = self.validate_user(token)
-        if not response.user:
-            # The token might have been invalidated. Clear cookies.
-            resp = redirect(login_url)
-            resp.set_cookie('token', max_age=0) # max_age=0 unsets the cookie.
-            return resp
+    def any(self, request: Request, response: Response):
+        session = OAuth2Session(
+            client_id=Settings.OIDC_ID,
+            client_secret=Settings.OIDC_SECRET,
+            redirect_uri=Settings.REDIRECT_URL,
+            scope="openid permissions",
+        )
+        
+        if request.args.get("code") is not None:
+            # User returned from the sso login redirect.
+            # The user should be redirected to / at the end.
+            response = redirect("/")
+            
+            if (error := request.args.get("error")) is not None:
+                description = request.args.get("error_description")
+                raise OAuthError(error=error, description=description)
+            
+            try:
+                state_data = cast(dict[str, str], jwt.decode(
+                    request.cookies.get("state", ""),
+                    Settings.JWT_SECRET,
+                    algorithms=["HS256"],
+                ))
+                state = state_data["state"]
+                
+                if state != request.args.get("state"):
+                    raise MismatchingStateError()
+                
+                token = session.fetch_token(
+                    self.metadata["token_endpoint"],
+                    authorization_response=request.url,
+                )
+                
+                user_info = jose.jwt.decode(token["id_token"], self.jwk_keys, claims_cls=CodeIDToken)
+                
+                auth_token = AuthToken(
+                    kth_id=cast(str, user_info["sub"]),
+                    permissions=[
+                        cast(str, perm['scope'])
+                        for perm in user_info["permissions"]
+                        if perm['id'] == 'access'
+                    ],
+                )
+                
+                auth_token_jwt = jwt.encode(dict(auth_token), Settings.JWT_SECRET, algorithm="HS256")
+                response.set_cookie("token", auth_token_jwt)
+                response.delete_cookie("state")
+                
+                # Redirect to "/", clearing auth query parameters.
+                return response
+            except jwt.InvalidTokenError:
+                # Bad state token, restart process.
+                logged_in = False
+        elif token_jwt := request.cookies.get("token"):
+            # User has already logged in.
+            try:
+                auth_token = AuthToken(**jwt.decode(token_jwt, Settings.JWT_SECRET, algorithms=["HS256"]))
 
-        response.set_cookie('token', token, httponly=True, samesite='Lax')
+                logged_in = True
+                request.environ["kth_id"] = auth_token["kth_id"]
+                request.environ["permissions"] = auth_token["permissions"]
+            except jwt.InvalidTokenError:
+                # Bad token, consider user not logged in.
+                logged_in = False
+        else:
+            # User is not logged in.
+            logged_in = False
+        
+        if not logged_in:
+            url, state = session.create_authorization_url(self.metadata["authorization_endpoint"])
+            
+            state_data = {
+                "state": state,
+            }
+            state_jwt = jwt.encode(state_data, Settings.JWT_SECRET, algorithm="HS256")
+            
+            response = redirect(url)
+            response.set_cookie("state", state_jwt)
+            
+            return response
+        
         return response
-
-    def validate_user(self, token):
-        if not self.validate_token(token):
-            return False
-
-        url      = '{}/verify/{}'.format(self.login_api_url, token)
-        params   = {'api_key': self.api_key}
-        response = get(url, params=params)
-
-        if response.status_code != 200:
-            return False
-        return response.json()['user']
-
-    def validate_token(self, token):
-        for letter in token:
-            if letter not in self.token_alphabet:
-                return False
-        return True
 
 class ListFiles:
     def GET(self, request, response):
         list_type = request.args.get('list')
         if not list_type is None:
-            response.data = dumps(s3.list(request.path[1:]))
+            response.data = json.dumps(s3.list(request.path[1:]))
 
             return response
-
-class HivePermission:
-    def any(self, request, response):
-        self.hive_url = getenv('HIVE_URL', 'https://hive.datasektionen.se/api/v1')
-        self.hive_api_key = cast(str, getenv('HIVE_API_KEY'))
-        response.permissions = self.has_permission(response.user)
-
-    def has_permission(self, user):
-        url = self.hive_url + '/user/{}/permissions'.format(user)
-        headers = {"Authorization": "Bearer " + self.hive_api_key}
-        res = get(url, headers=headers)
-
-        if res.status_code != 200:
-            print(res.text)
-            return False
-
-        permissions = []
-        for perm in res.json():
-            if perm['id'] == 'access':
-                permissions.append(perm['scope'])
-
-        return permissions
-
 
 class Static:
     def __init__(self, path):
         self.path = path
         self.files = listdir(path)
 
-    def GET(self, request, response):
+    def GET(self, request: Request, response: Response):
         if request.path.endswith('/'):
             request.path = '/index.html'
 
@@ -102,18 +160,14 @@ class Static:
         response.response = open(real_path, 'rb')
         response.mimetype = from_file(real_path)
 
-        if response.user:
-            response.set_cookie('user', response.user)
-            response.set_cookie('permissions', ', '.join(response.permissions))
-
         return response
 
 class S3Handler:
-    def has_access(self, response, path):
-        if not response.user:
+    def has_access(self, request: Request, path):
+        if not "kth_id" in request.environ:
             return False
 
-        if '*' in response.permissions:
+        if '*' in request.environ["permissions"]:
             return True
 
         path_items = path.split('/')
@@ -122,9 +176,9 @@ class S3Handler:
         if folder == '~':
             return True
 
-        return folder in response.permissions
+        return folder in request.environ["permissions"]
 
-    def GET(self, request, response):
+    def GET(self, request: Request, response: Response):
         url = s3.get_url(request.path[1:])
 
         if url:
@@ -136,11 +190,11 @@ class S3Handler:
 
         return response
 
-    def POST(self, request, response):
+    def POST(self, request: Request, response: Response):
         path = request.path[1:]
         folder = path.split('/')
 
-        if self.has_access(response, path):
+        if self.has_access(request, path):
 
             file = request.files['file']
 
@@ -148,7 +202,7 @@ class S3Handler:
 
             public = request.args.get('public') or "False"
 
-            s3.put(path, file, response.user, mimetype, public)
+            s3.put(path, file, request.environ["kth_id"], mimetype, public)
 
             response.data = 'That probably worked...'
 
@@ -158,7 +212,7 @@ class S3Handler:
 
         return response
 
-    def PUT(self, request, response):
+    def PUT(self, request: Request, response: Response):
         path = request.path[1:]
         state = request.args.get('public')
 
@@ -167,7 +221,7 @@ class S3Handler:
             response.status_code = 400
             return response
 
-        if self.has_access(response, path):
+        if self.has_access(request, path):
 
             s3.put_permissions(path, state)
             response.data = 'That probably worked...'
@@ -179,11 +233,11 @@ class S3Handler:
         return response
 
 
-    def DELETE(self, request, response):
+    def DELETE(self, request: Request, response: Response):
         path = request.path[1:]
         folder = path.split('/')
 
-        if s3.owner(path) == response.user or self.has_access(response, path):
+        if s3.owner(path) == request.environ["kth_id"] or self.has_access(request, path):
             s3.delete(path)
             response.data = 'That probably worked...'
         else:
@@ -195,7 +249,6 @@ class S3Handler:
 middlewarez = [
     Auth(),
     ListFiles(),
-    HivePermission(),
     Static('build'),
     S3Handler()
 ]
@@ -203,7 +256,7 @@ middlewarez = [
 supported_methods = set(["GET", "PUT", "POST", "DELETE"])
 
 @Request.application
-def request_handler(request):
+def request_handler(request: Request):
     response = Response()
 
     if request.method not in supported_methods:
@@ -213,7 +266,7 @@ def request_handler(request):
 
     for middleware in middlewarez:
         d = dir(middleware)
-        if isinstance(middleware, (Auth, HivePermission)):
+        if isinstance(middleware, Auth):
             finished_response = middleware.any(request, response)
         elif request.method in d:
             finished_response = middleware.__getattribute__(request.method)(request, response)

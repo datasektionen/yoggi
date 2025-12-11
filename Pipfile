@@ -13,6 +13,8 @@ requests = "*"
 gunicorn = "*"
 Flask = "*"
 Flask-Cors = "*"
+authlib = "*"
+pyjwt = "*"
 
 [requires]
 python_version = "3.13"

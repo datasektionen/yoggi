@@ -19,15 +19,15 @@ Tip: If your running your editor with the virtual environment you can instead ru
 
 # Environment variables
 
-When running locally, you can run [nyckeln under dörrmattan](https://github.com/datasektionen/nyckeln-under-dorrmattan) instead of the production login system. If you need access to the `dsekt-assets-dev` bucket, you can ask Systemansvarig: [d-sys@datasektionen.se](mailto:d-sys@datasektionen.se), but setting up an own bucket may be a better choice.
+When running locally, you can run [nyckeln under dörrmattan](https://github.com/datasektionen/nyckeln-under-dorrmattan) instead of the production sso system. If you need access to the `dsekt-assets-dev` bucket, you can ask Systemansvarig: [d-sys@datasektionen.se](mailto:d-sys@datasektionen.se), but setting up an own bucket may be a better choice.
 
 | Name                           | Description                                                      | Default                                   |
 | ------------------------------ | ---------------------------------------------------------------- | ----------------------------------------- |
-| LOGIN_FRONTEND_URL             | URL to login from frontend                                       | https://sso.datasektionen.se/legacyapi    |
-| LOGIN_API_URL                  | URL to login from backend                                        | https://sso.datasektionen.se/legacyapi    |
-| LOGIN_API_KEY                  | API key for KTH authentication                                   | ---                                       |
-| HIVE_URL                       | URL to hive server                                               | https://hive.datasektionen.se/api/v1      |
-| HIVE_API_KEY                   | API key for getting permissions                                  | ---                                       |
+| OIDC_PROVIDER                  | URL to sso from backend                                          | http://sso.nomad.dsekt.internal/op        |
+| OIDC_ID                        | SSO ID                                                           | yoggi                                     |
+| OIDC_SECRET                    | Application API key secret for SSO                               | ---                                       |
+| REDIRECT_URL                   | Application URL which SSO should redirect to                     | https://static.datasektionen.se/          |
+| JWT_SECRET                     | Arbitrary secret string used to sign auth JWT                    | ---                                       |
 | PORT                           | Port to serve backend on                                         | 5000                                      |
 | S3_BUCKET                      | Name of S3 bucket. When running locally, use `dsekt-assets-dev`  | ---                                       |
 | AWS_ACCESS_KEY_ID              | AWS IAM access key id                                            | ---                                       |
