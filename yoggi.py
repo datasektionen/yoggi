@@ -159,6 +159,10 @@ class Static:
         real_path = join(self.path, filename)
         response.response = open(real_path, 'rb')
         response.mimetype = from_file(real_path)
+        
+        if "kth_id" in request.environ:
+            response.set_cookie('kth_id', request.environ["kth_id"])
+            response.set_cookie('permissions', ', '.join(request.environ["permissions"]))
 
         return response
 
