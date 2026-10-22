@@ -1,4 +1,4 @@
-FROM docker.io/node:23-alpine3.20 AS frontend
+FROM node:24.22.1-alpine3.24 AS frontend
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -10,7 +10,7 @@ COPY src src
 
 RUN npm run build
 
-FROM docker.io/python:3.13-alpine3.20
+FROM docker.io/python:3.13-alpine3.24
 WORKDIR /app
 
 RUN apk add --no-cache libmagic
